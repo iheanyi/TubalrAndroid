@@ -4,5 +4,10 @@
     <string name="app_name">Tubalr</string>
     <string name="hello_world">Hello world!</string>
     <string name="menu_settings">Settings</string>
+    <string-array name="home_menu">
+        <item >Top Genres</item>
+        <item >All Genres</item>
+        <item >Reddit Playlists</item>
+    </string-array>
 
 </resources>

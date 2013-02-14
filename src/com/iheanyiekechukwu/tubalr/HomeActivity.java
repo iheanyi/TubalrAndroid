@@ -39,7 +39,6 @@ public class HomeActivity extends Activity implements OnItemClickListener {
         menuListView.setOnItemClickListener(this);
         
         
-        
         //controller = new MediaController(this);
         //controller.show(50000);
     }

@@ -1,28 +1,57 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:background="@color/menu_background"
     android:orientation="vertical"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp"
     tools:context=".HomeActivity" >
 
-    <SurfaceView
-        android:id="@+id/surfaceView1"
+    <SearchView
+        android:id="@+id/songSearchView"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_weight="3" />
+        android:layout_height="wrap_content"
+        android:background="@color/search_background"
+        android:queryHint="@string/search_name"
+        android:textColor="@color/white" >
+
+    </SearchView>
+    
+    <View
+  		android:layout_width="fill_parent"
+  		android:layout_height="wrap_content"
+  		android:background="?android:attr/listDivider" />
 
     <ListView
-        android:id="@+id/homeListView"
+        android:id="@+id/homeFixedListView"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_weight="3" >
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/songSearchView"
+        android:layout_alignParentLeft="true"
+        android:textColor="@color/white">
+    </ListView>
+    
+    <View
+  		android:layout_width="match_parent"
+  		android:layout_height="wrap_content"
+  		android:background="?android:attr/listDivider" />
+
+    <TextView
+        android:id="@+id/dividerTextView"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+   		android:paddingLeft="16dp"
+        android:layout_below="@+id/homeFixedListView"
+        android:layout_alignParentLeft="true"
+        android:text="My Custom Playlists" />
+
+    <ListView
+        android:id="@+id/customPlaylistView"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/dividerTextView"
+        android:textColor="@color/white">
     </ListView>
 
-    <MediaController
-        android:id="@+id/mediaController"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="3" >
-    </MediaController>
-
-</LinearLayout>
+</RelativeLayout>

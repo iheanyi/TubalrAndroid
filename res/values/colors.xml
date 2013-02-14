@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+    <resources>
+        <color name="menu_background">#212121</color>
+        <color name="search_background">#1A1A1A</color>
+        <color name="white">#FFFFFF</color>
+        <color name="gray_color">#808080</color>
+        <color name="main_background">#292929</color>
+        <color name="buffer_color">#4283F4</color>
+    </resources>

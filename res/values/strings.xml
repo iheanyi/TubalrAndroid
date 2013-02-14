@@ -9,5 +9,6 @@
         <item >All Genres</item>
         <item >Reddit Playlists</item>
     </string-array>
+        <string name="search_name">Search</string>
 
 </resources>

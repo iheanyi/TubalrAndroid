@@ -29,19 +29,21 @@ public final class R {
         public static final int ic_launcher=0x7f020000;
     }
     public static final class id {
-        public static final int customPlaylistView=0x7f0a0003;
-        public static final int dividerTextView=0x7f0a0002;
-        public static final int email=0x7f0a0007;
-        public static final int homeFixedListView=0x7f0a0001;
-        public static final int login=0x7f0a0009;
-        public static final int login_form=0x7f0a0006;
-        public static final int login_status=0x7f0a0004;
-        public static final int login_status_message=0x7f0a0005;
-        public static final int menu_forgot_password=0x7f0a000c;
-        public static final int menu_settings=0x7f0a000b;
-        public static final int password=0x7f0a0008;
-        public static final int sign_in_button=0x7f0a000a;
-        public static final int songSearchView=0x7f0a0000;
+        public static final int customPlaylistView=0x7f0a0005;
+        public static final int dividerTextView=0x7f0a0004;
+        public static final int email=0x7f0a0009;
+        public static final int homeFixedListView=0x7f0a0003;
+        public static final int justButton=0x7f0a0001;
+        public static final int login=0x7f0a000b;
+        public static final int login_form=0x7f0a0008;
+        public static final int login_status=0x7f0a0006;
+        public static final int login_status_message=0x7f0a0007;
+        public static final int menu_forgot_password=0x7f0a000e;
+        public static final int menu_settings=0x7f0a000d;
+        public static final int password=0x7f0a000a;
+        public static final int sign_in_button=0x7f0a000c;
+        public static final int similarButton=0x7f0a0002;
+        public static final int songSearchText=0x7f0a0000;
     }
     public static final class layout {
         public static final int activity_home=0x7f030000;

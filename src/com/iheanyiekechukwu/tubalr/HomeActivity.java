@@ -3,8 +3,11 @@ package com.iheanyiekechukwu.tubalr;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -59,10 +62,14 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
     
     private static final String ECHONEST_TOKEN = "OYJRQNQMCGIOZLFIW";
     private static final String ECHONEST_SONG_URL = "http://developer.echonest.com/api/v4/artist/songs?api_key=OYJRQNQMCGIOZLFIW&name=";
+    
+    private static final String ECHONEST_SIMILAR_URL = "http://developer.echonest.com/api/v4/artist/similar?api_key=OYJRQNQMCGIOZLFIW&name=";
     private static final String ECHONEST_RESULT_URL = "&format=json&callback=?&start=0&results=";
     
     private static final String YOUTUBE_SEARCH_URL = "https://gdata.youtube.com/feeds/api/videos?q=";
     private static final String YOUTUBE_END_URL = "&orderby=relevance&start-index=1&max-results=10&v=2&format=5&alt=json";
+    private static final String YOUTUBE_VIDEO_URL = "https://youtube.com/watch?v=";
+    
     private Context context;
     
     private String artistName;
@@ -71,6 +78,9 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
     private ArrayList<VideoClass> playlist;
     
     private Button justButton;
+    private Button similarButton;
+    
+    private String tempID;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,6 +108,9 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         
         justButton = (Button) findViewById(R.id.justButton);
         justButton.setOnClickListener(this);
+        
+        similarButton = (Button) findViewById(R.id.similarButton);
+        similarButton.setOnClickListener(this);
         
     }
 
@@ -132,13 +145,28 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         return new DefaultHttpClient(conMgr, params);
     }
     
+    private class YoutubeVideoTask extends AsyncTask<String, Integer, String> {
+
+		@Override
+		protected String doInBackground(String... params) {
+			// TODO Auto-generated method stub
+			String URL = params[0];
+			String html = getPage(URL);
+			return html;
+		}
+    	
+		protected void onPostExecute(String result) {
+			decodeURL(result);
+		}
+    }
+    
     private class YoutubeTask extends AsyncTask<String, Integer, String> {
         @Override
         protected String doInBackground(String... params) {
             // TODO Auto-generated method stub
             
             String URL = params[0];
-            String html = getYoutubePage(URL);
+            String html = getPage(URL);
             
             
             return html;
@@ -171,13 +199,166 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
        }
         
     }
+    
+    private class EchoSimilarTask extends AsyncTask<String, Integer, String> {
+
+		@Override
+		protected String doInBackground(String... params) {
+			// TODO Auto-generated method stub
+			String URLToFetch = params[0];
+			String html = getPage(URLToFetch);
+			
+			return html;
+			//return null;
+		}
+		
+		protected void onPostExecute(String result) {
+			
+			processSimilarJSON(result);
+			
+			
+		}
+    	
+    }
 
     public void onItemClick(AdapterView<?> adapter, View v, int id, long arg3) {
         // TODO Auto-generated method stub
         
     }
 
-    public void processYoutubeJSON(String result) {
+    public void decodeURL(String content) {
+		// TODO Auto-generated method stub
+		Pattern startPattern = Pattern.compile("url_encoded_fmt_stream_map\\\": \\\"");
+		Pattern endPattern = Pattern.compile("\\\", \\\"");
+		Matcher matcher = startPattern.matcher(content);
+		
+		String title = findVideoFilename(content);
+		String id = findVideoID(content);
+		if(matcher.find()) {
+			try {
+				String[] start = content.split(startPattern.toString());
+				String[] end = start[1].split(endPattern.toString());
+				
+				// Other decoding stuff
+				String contentDecoded = URLDecoder.decode(end[0], "UTF-8");
+				contentDecoded = contentDecoded.replaceAll(", ", "-");
+				contentDecoded = contentDecoded.replaceAll("sig=", "signature=");
+				contentDecoded = contentDecoded.replaceAll("x-flv", "flv");
+				contentDecoded = contentDecoded.replaceAll("\\\\u0026", "&");
+				Log.d("DEBUG", "contentDecoded: " + contentDecoded);
+				findCodecs(contentDecoded, title, id);
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
+		}
+    }
+
+	private String findVideoFilename(String content) {
+		// TODO Auto-generated method stub		
+        Pattern videoPattern = Pattern.compile("<title>(.*?)</title>");
+        Matcher matcher = videoPattern.matcher(content);
+        String title;
+        String titleRaw;
+        if (matcher.find()) {
+            titleRaw = matcher.group().replaceAll("(<| - YouTube</)title>", "").replaceAll("&quot;", "\"").replaceAll("&amp;", "&").replaceAll("&#39;", "'");
+            title = titleRaw;
+        } else {
+            title = "Youtube Video";
+        }
+
+        Log.d("DEBUG", "findVideoFilename: " + title);
+        
+		return title;
+	}
+	
+	private String findVideoID(String content) {
+		Pattern videoPattern = Pattern.compile("<input type=\"hidden\" name=\"video_id\" value=\"(.*?)\">");
+		Matcher matcher = videoPattern.matcher(content);
+		String id;
+		
+		if(matcher.find()) {
+			id = matcher.group();
+		}
+		
+		else {
+			id = "error";
+		}
+		
+		Log.d("DEBUG", "FindVideoID: " + id);
+		return id;
+	}
+
+	private void findCodecs(String contentDecoded, String title, String id) {
+		// TODO Auto-generated method stub
+		Pattern trimPattern = Pattern.compile(",");
+		Matcher matcher = trimPattern.matcher(contentDecoded);
+		if(matcher.find()) {
+			String[] CQS = contentDecoded.split(trimPattern.toString());
+			
+			// Just go with first quality for now
+			linksComposer(CQS[0], 1, title, id);
+		}
+		
+	}
+
+	private void linksComposer(String block, int i, String title, String id) {
+		// TODO Auto-generated method stub
+		Pattern urlPattern = Pattern.compile("http://.*");
+		Matcher urlMatcher = urlPattern.matcher(block);
+		if(urlMatcher.find()) {
+			Pattern sigPattern = Pattern.compile("signature=[[0-9][A-Z]]{40}\\.[[0-9][A-Z]]{40}");
+			Matcher sigMatcher = sigPattern.matcher(block);
+			if(sigMatcher.find()) {
+				String url = urlMatcher.group();
+    			url = url.replaceAll("&type=.*", "");
+    			url = url.replaceAll("&signature=.*", "");
+    			url = url.replaceAll("&quality=.*", "");
+    			url = url.replaceAll("&fallback_host=.*", "");
+    			Log.d("DEBUG", "url: " + url);
+    			String sig = sigMatcher.group();
+    			Log.d("DEBUG", "sig: " + sig);
+				String linkToAdd = url + "&" + sig;
+				linkToAdd.replaceAll("&itag=[0-9][0-9]&signature", "&signature");
+				playlist.add(new VideoClass(id, title, linkToAdd));
+			}
+		}
+		
+	}
+
+	public void processSimilarJSON(String result) {
+		// TODO Auto-generated method stub
+		
+    	JSONObject object;
+		try {
+			object = new JSONObject(result);
+			JSONObject response = object.getJSONObject("response");
+		  	JSONArray artists = response.getJSONArray("artists");
+	    	
+	    	for(int i = 0; i < artists.length(); ++i) {
+	    		JSONObject artist = artists.getJSONObject(i);
+	    		String name = artist.getString("name");
+	    		
+	    		String yt_url;
+				try {
+					yt_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(name, "UTF-8") + YOUTUBE_END_URL;
+		    		YoutubeTask myTask = new YoutubeTask();
+		    		myTask.execute(yt_url);
+				} catch (UnsupportedEncodingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+	    		
+	    		
+	    	}
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+  
+	}
+
+	public void processYoutubeJSON(String result) {
         // TODO Auto-generated method stub
         
         try {
@@ -209,11 +390,14 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
             		videos.add(newVideo);
                     Log.d("TUB", Integer.toString(videos.size()));
                     Log.d("TUB", id + " - " + videoTitle);
+                    
+                    String yt_video_url = YOUTUBE_VIDEO_URL + id;
+                    YoutubeVideoTask myTask = new YoutubeVideoTask();
+                    myTask.execute(yt_video_url);
+                    break;
                 }
-            	            		//else if(isMusic(entry)) {
-            			//Toast.makeText(this.context, "Is Music Works", Toast.LENGTH_SHORT).show();
-            		//}
-            		//Toast.makeText(this.context, "Invalid video . . . ", Toast.LENGTH_SHORT).show();
+            	
+            	
 
             }
             
@@ -250,10 +434,10 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 	    		}
 	    		
 	    		else {
-	    			
+	    			 
 	    		
-	    		String arrayTitle = videos.get(i).getTitle().toLowerCase().replaceAll("/ *\\([^)]*\\)* /", "").replaceAll("/[^a-zA-z ]/", "");
-	    		String videoTitle = title.toLowerCase().replaceAll("/ *\\([^)]*\\)* /", "").replaceAll("/[^a-zA-z ]/", "");
+	    		String arrayTitle = videos.get(i).getTitle().toLowerCase().replaceAll(" *\\([^)]*\\)* ", "").replaceAll("[^a-zA-z ]/", "");
+	    		String videoTitle = title.toLowerCase().replaceAll(" *\\([^)]*\\)* ", "").replaceAll("[^a-zA-z ]/", "");
 	    			if(videoTitle.equalsIgnoreCase(arrayTitle)) {
 	    				//Toast.makeText(this.context, "NOT UNIQUE", Toast.LENGTH_SHORT).show();
 	    				Log.d("UNI", "NOT UNIQUE TITLE");
@@ -465,8 +649,6 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         
         this.artistName = search;
         
-        Toast.makeText(context, "On  Click Listener . . . ", Toast.LENGTH_SHORT).show();
-
         if(search.length() == 0) {
             Toast.makeText(context, "No text specified!", Toast.LENGTH_SHORT).show();
         }
@@ -475,22 +657,11 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         	
         	int numOfSongs = v.getId() == R.id.justButton ? 40 : 20;
         	
-        	String url;
-			try {
-				url = ECHONEST_SONG_URL + URLEncoder.encode(search, "UTF-8") + ECHONEST_RESULT_URL + Integer.toString(numOfSongs);
-	        	EchoSongTask myTask = new EchoSongTask();
-	        	myTask.execute(url);
-	        	Toast.makeText(this.context, url, Toast.LENGTH_SHORT).show();
-			} catch (UnsupportedEncodingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-            
-          /*  switch (v.getId()) {
+          switch (v.getId()) {
                 case R.id.justButton:
                    
                     try {
-                        String url = ECHONEST_SONG_URL + URLEncoder.encode(search, "UTF-8") + ECHONEST_RESULT_URL + "40";
+                        String url = ECHONEST_SONG_URL + URLEncoder.encode(search, "UTF-8") + ECHONEST_RESULT_URL + Integer.toString(numOfSongs);
                         EchoSongTask myTask = new EchoSongTask();
                         myTask.execute(url);
                         Toast.makeText(this.context, url, Toast.LENGTH_SHORT).show();
@@ -506,8 +677,10 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
                 case R.id.similarButton:
                     
                     try {
-                        String url = ECHONEST_SONG_URL + URLEncoder.encode(search, "UTF-8") + ECHONEST_RESULT_URL + "20";
-
+                        String url = ECHONEST_SIMILAR_URL + URLEncoder.encode(search, "UTF-8") + ECHONEST_RESULT_URL + Integer.toString(numOfSongs);
+                        EchoSimilarTask myTask = new EchoSimilarTask();
+                        myTask.execute(url);
+                        Toast.makeText(this.context, url, Toast.LENGTH_SHORT).show();
                         
                     } catch (UnsupportedEncodingException e) {
                         // TODO Auto-generated catch block
@@ -517,7 +690,7 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
                     break;
                  
                 
-            }*/
+            }
             
         }
 
@@ -551,38 +724,25 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         return pageHTML;
     
     }
-    
-    public String getYoutubePage(String URL) {
-        String pageHTML = "";
         
-        try {
-        HttpClient client = createHttpsClient();
-        HttpGet request = new HttpGet(URL);
-        
-        HttpResponse rp = client.execute(request);
-        
-        if(rp.getStatusLine().getStatusCode() == HttpStatus.SC_OK)
-        {
-            HttpEntity result = rp.getEntity();
-            pageHTML = EntityUtils.toString(result);                
-        }
-        } catch(IOException e){
-            e.printStackTrace();
-        } 
-        
-        
-        return pageHTML;
-    }
-    
     public class VideoClass {
         
         private String id;
         private String title;
+        private String url;
         
         public VideoClass(String id, String title) {
+        	this.id  = id;
+        	this.title = title;
+        	this.url = "";
+        }
+        public VideoClass(String id, String title, String url) {
             this.id = id;
             this.title = title;
+            this.url = url;
         }
+        
+        
         
         public String getId() {
         	return this.id;
@@ -591,6 +751,14 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         public String getTitle() {
         	return this.title;
         }
+
+		public String getUrl() {
+			return url;
+		}
+
+		public void setUrl(String url) {
+			this.url = url;
+		}
     }
     
 }

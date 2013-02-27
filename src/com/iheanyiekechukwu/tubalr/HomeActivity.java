@@ -53,19 +53,20 @@ import android.widget.Toast;
 public class HomeActivity extends Activity implements OnItemClickListener, OnClickListener {
     MediaController controller;
     
-    private ListView menuListView;
     private ArrayAdapter<String> menuAdapter;
     private Resources res;
     private String[] menuNames;
     
+    private ListView menuListView;
     private EditText searchText;
     
-    private static final String ECHONEST_TOKEN = "OYJRQNQMCGIOZLFIW";
-    private static final String ECHONEST_SONG_URL = "http://developer.echonest.com/api/v4/artist/songs?api_key=OYJRQNQMCGIOZLFIW&name=";
     
+    // EchoNest URLs
+    private static final String ECHONEST_SONG_URL = "http://developer.echonest.com/api/v4/artist/songs?api_key=OYJRQNQMCGIOZLFIW&name=";    
     private static final String ECHONEST_SIMILAR_URL = "http://developer.echonest.com/api/v4/artist/similar?api_key=OYJRQNQMCGIOZLFIW&name=";
     private static final String ECHONEST_RESULT_URL = "&format=json&callback=?&start=0&results=";
     
+    // Youtube URLs
     private static final String YOUTUBE_SEARCH_URL = "https://gdata.youtube.com/feeds/api/videos?q=";
     private static final String YOUTUBE_END_URL = "&orderby=relevance&start-index=1&max-results=10&v=2&format=5&alt=json";
     private static final String YOUTUBE_VIDEO_URL = "https://youtube.com/watch?v=";
@@ -81,7 +82,7 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
     private Button similarButton;
     
     private String tempID;
-    
+        
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -234,6 +235,8 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 		
 		String title = findVideoFilename(content);
 		String id = findVideoID(content);
+		
+		//String id = this.tempID;
 		if(matcher.find()) {
 			try {
 				String[] start = content.split(startPattern.toString());
@@ -272,12 +275,17 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 	}
 	
 	private String findVideoID(String content) {
-		Pattern videoPattern = Pattern.compile("<input type=\"hidden\" name=\"video_id\" value=\"(.*?)\">");
+		//Pattern videoPattern = Pattern.compile("<input type=\\\"hidden\\\" name=\\\"video_id\\\" value=\\\"(.*?)\\\">");
+		Pattern videoPattern = Pattern.compile("\\\"video_id\\\": (.*?) \\\"");
+		//Pattern endPattern = Pattern.compile("\\\"");
+		
 		Matcher matcher = videoPattern.matcher(content);
 		String id;
 		
 		if(matcher.find()) {
 			id = matcher.group();
+			id = id.replaceAll("\\\"video_id\\\": \\\"", "");
+			id = id.replaceAll("\\\", \\\"", "").trim();
 		}
 		
 		else {
@@ -285,6 +293,7 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 		}
 		
 		Log.d("DEBUG", "FindVideoID: " + id);
+		
 		return id;
 	}
 
@@ -319,7 +328,10 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
     			Log.d("DEBUG", "sig: " + sig);
 				String linkToAdd = url + "&" + sig;
 				linkToAdd.replaceAll("&itag=[0-9][0-9]&signature", "&signature");
-				playlist.add(new VideoClass(id, title, linkToAdd));
+				String testString = new String(linkToAdd.getBytes());
+				Log.d("DEBUG", "link:" + testString);
+				
+				playlist.add(new VideoClass(id, title, testString));
 			}
 		}
 		
@@ -373,7 +385,7 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
                 String[] splitArray = full_string.split(":");
                 
                 String id = splitArray[3];
-                          
+                this.tempID = splitArray[3];
                 JSONObject titleNode = entry.getJSONObject("title");
                 String videoTitle = titleNode.getString("$t");
                 
@@ -425,13 +437,11 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 	    	
 	    	String title = video.getJSONObject("title").getString("$t");
 	    	for(int i = 0; i < videos.size(); ++i) {
-    			Toast.makeText(this.context, "Comparing uniqueness", Toast.LENGTH_SHORT).show();
 	    		if(videos.get(i).getId().equalsIgnoreCase(id)) {
 	    			Log.d("UNI", "NOT UNIQUE - ID");
-	    			Toast.makeText(this.context, "NOT UNIQUE", Toast.LENGTH_SHORT).show();
 	    			unique = false;
 	    			break;
-	    		}
+	    		} 
 	    		
 	    		else {
 	    			 
@@ -456,7 +466,6 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 
     public boolean checkVideo(JSONObject video) {
     	if(isUnique(video) && isNotBlocked(video) && isMusic(video) && isNotCoverOrRemix(video) && isNotLive(video) && hasTitle(video)) {
-			Toast.makeText(this.context, "Valid video", Toast.LENGTH_SHORT).show();
     		//Log.d("TEST", "Valid video");
     		return true;
     	}
@@ -464,33 +473,32 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
     	else {
     		// Loop through and find the culprit
     		
-			Toast.makeText(this.context, "Invalid Video", Toast.LENGTH_SHORT).show();
 			
 			if(!isNotBlocked(video)) {
 				Log.d("BLOCK", "Invalid");
-				Toast.makeText(this.context, "It's because of NotBlocked", Toast.LENGTH_SHORT).show();
+				//Toast.makeText(this.context, "It's because of NotBlocked", Toast.LENGTH_SHORT).show();
 			}
 			
 			if(!isMusic(video)) {
 				Log.d("MUSIC", "Invalid");
-				Toast.makeText(this.context, "It's because of isMusic", Toast.LENGTH_SHORT).show();
+				//Toast.makeText(this.context, "It's because of isMusic", Toast.LENGTH_SHORT).show();
 			}
 			
 			if(!isNotCoverOrRemix(video)) {
 				Log.d("COVER", "Invalid");
 
-				Toast.makeText(this.context, "It's because of notCoverOrRemix", Toast.LENGTH_SHORT).show();
+				//Toast.makeText(this.context, "It's because of notCoverOrRemix", Toast.LENGTH_SHORT).show();
 			}
 			
 			if(!isNotLive(video)) {
 				Log.d("LIVE", "Invalid");
 
-				Toast.makeText(this.context, "It's because of NotLive", Toast.LENGTH_SHORT).show();
+				//Toast.makeText(this.context, "It's because of NotLive", Toast.LENGTH_SHORT).show();
 			}
 			
 			if(!hasTitle(video)) {
 				Log.d("TITLE", "Invalid");
-				Toast.makeText(this.context, "It's because of hasTitle", Toast.LENGTH_SHORT).show();
+				//Toast.makeText(this.context, "It's because of hasTitle", Toast.LENGTH_SHORT).show();
 			}
     		//Log.d("TEST", "Invalid video");
     		return false;
@@ -510,7 +518,7 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 	    	JSONObject mediaType = mediaCategory.getJSONObject(0);
 	    	String type = mediaType.getString("$t");
 	    	
-			Toast.makeText(this.context, type.equals("Music") + " - isMusic", Toast.LENGTH_SHORT).show();
+			//Toast.makeText(this.context, type.equals("Music") + " - isMusic", Toast.LENGTH_SHORT).show();
 
 	    	return type.equals("Music");
 		} catch (JSONException e) {
@@ -620,11 +628,11 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
                     String yt_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(new_search, "UTF-8") + YOUTUBE_END_URL;
                     YoutubeTask myTask = new YoutubeTask();
                     myTask.execute(yt_url);
-                    Toast.makeText(this.context, yt_url, Toast.LENGTH_SHORT).show();  
+                    //Toast.makeText(this.context, yt_url, Toast.LENGTH_SHORT).show();  
                     Log.d("URL", yt_url);
                 }
                 
-                Toast.makeText(this.context, Integer.toString(videos.size()), Toast.LENGTH_SHORT).show();
+                //Toast.makeText(this.context, Integer.toString(videos.size()), Toast.LENGTH_SHORT).show();
 
             }
                 // If the length 
@@ -664,7 +672,7 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
                         String url = ECHONEST_SONG_URL + URLEncoder.encode(search, "UTF-8") + ECHONEST_RESULT_URL + Integer.toString(numOfSongs);
                         EchoSongTask myTask = new EchoSongTask();
                         myTask.execute(url);
-                        Toast.makeText(this.context, url, Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(this.context, url, Toast.LENGTH_SHORT).show();
                     } catch (UnsupportedEncodingException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
@@ -680,7 +688,7 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
                         String url = ECHONEST_SIMILAR_URL + URLEncoder.encode(search, "UTF-8") + ECHONEST_RESULT_URL + Integer.toString(numOfSongs);
                         EchoSimilarTask myTask = new EchoSimilarTask();
                         myTask.execute(url);
-                        Toast.makeText(this.context, url, Toast.LENGTH_SHORT).show();
+                        //Text(this.context, url, Toast.LENGTH_SHORT).show();
                         
                     } catch (UnsupportedEncodingException e) {
                         // TODO Auto-generated catch block

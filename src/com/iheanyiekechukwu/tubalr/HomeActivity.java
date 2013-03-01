@@ -196,7 +196,14 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         protected void onPostExecute(String result) {
             //Toast.makeText(context, "Youtube Post Execute Task", Toast.LENGTH_SHORT).show();
             //prog.dismiss();
-        	processYoutubeJSON(result);
+        	if(videos.size() < 40) {
+            	processYoutubeJSON(result);
+
+        	}
+        	
+        	else {
+        		this.cancel(true);
+        	}
         }
         
     }
@@ -430,9 +437,17 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 	    		
 	    		String yt_url;
 				try {
-					yt_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(name, "UTF-8") + YOUTUBE_END_URL;
-		    		YoutubeTask myTask = new YoutubeTask();
-		    		myTask.execute(yt_url);
+					// Fetching Youtube Songs
+					if(videos.size() < 40) {
+						yt_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(name, "UTF-8") + YOUTUBE_END_URL;
+			    		YoutubeTask myTask = new YoutubeTask();
+			    		myTask.execute(yt_url);
+					}
+					
+					else {
+						break;
+					}
+
 				} catch (UnsupportedEncodingException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -457,6 +472,21 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
             JSONArray entries = feed.getJSONArray("entry");
             
             for(int i = 0; i < entries.length(); ++i) {
+        		if(videos.size() == 40) {
+                    Intent intent = new Intent(this, PlaylistActivity.class);
+                    ArrayList<VideoClass> playlistExtras = new ArrayList<VideoClass>();
+                    
+                    for(VideoClass v : videos) {
+                    	playlistExtras.add(v);
+                    }
+
+                    playlistExtras.addAll(playlist);
+                    
+                    intent.putExtra("playlistExtra", playlistExtras);
+                    this.startActivity(intent);
+        			break;
+        		}
+        		
                 JSONObject entry = entries.getJSONObject(i);
                 JSONObject idNode = entry.getJSONObject("id");
                 String full_string = idNode.getString("$t");
@@ -475,24 +505,19 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
                 
                 
             	//if(isUnique(entry) && isNotBlocked(entry) && isMusic(entry) && isNotCoverOrRemix(entry) && isNotLive(entry) && hasTitle(entry)) {
-            	if(checkVideo(entry)) {
-            		if(videos.size() == 5) {
-            			break;
-            		}
-            		
-            		else {
-                    	Toast.makeText(this.context, "Adding new video . . . " + videoTitle + " - " + id, Toast.LENGTH_SHORT).show();
+                if(checkVideo(entry)) {
+            	        Toast.makeText(this.context, "Adding new video . . . " + videoTitle + " - " + id, Toast.LENGTH_SHORT).show();
                     	videos.add(newVideo);
+                    	
+                		
                         Log.d("TUB", Integer.toString(videos.size()));
                         Log.d("TUB", id + " - " + videoTitle);
                         
-                        String yt_video_url = YOUTUBE_VIDEO_URL + id;
+                        /*String yt_video_url = YOUTUBE_VIDEO_URL + id;
                         YoutubeVideoTask myTask = new YoutubeVideoTask();
-                        myTask.execute(yt_video_url);
-            		}
+                        myTask.execute(yt_video_url);*/
+            	}
 
-                   // break;
-                }
             	
             	
 
@@ -703,8 +728,8 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
                 
                 // For each song, hit Youtube's Public API
                 for(int i = 0; i < songs.length(); ++i) {
-                	if(playlist.size() == 5) {
-                		Log.d("STOP", "Size reached 10!");
+                	if(videos.size() == 40) {
+                		Log.d("STOP", "Size reached 40!");
                 		break;
                 	}
                 	
@@ -712,14 +737,20 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
                         JSONObject song = songs.getJSONObject(i);
                         String title = song.getString("title");
                         
-                        String new_search = this.artistName + " - " + title;
-                        
+                        String new_search = this.artistName + " - " + title;                      
                     	//prog = ProgressDialog.show(this, "", "Fetching Youtube Songs . . .");
-                        String yt_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(new_search, "UTF-8") + YOUTUBE_END_URL;
-                        YoutubeTask myTask = new YoutubeTask();
-                        myTask.execute(yt_url);
-                        //Toast.makeText(this.context, yt_url, Toast.LENGTH_SHORT).show();  
-                        Log.d("URL", yt_url);	
+                        if(videos.size() < 40 ) {
+                            String yt_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(new_search, "UTF-8") + YOUTUBE_END_URL;
+                            YoutubeTask myTask = new YoutubeTask();
+                            myTask.execute(yt_url);
+                            //Toast.makeText(this.context, yt_url, Toast.LENGTH_SHORT).show();  
+                            Log.d("URL", yt_url);
+                        }
+                        
+                        else {
+                        	break;
+                        }
+
                 	}
 
                 }
@@ -738,19 +769,7 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-      
-        
-        Intent intent = new Intent(this, PlaylistActivity.class);
-        ArrayList<VideoClass> playlistExtras = new ArrayList<VideoClass>();
-        
-        for(VideoClass v : playlist) {
-        	playlistExtras.add(v);
-        }
 
-        playlistExtras.addAll(playlist);
-        
-        intent.putExtra("playlistExtra", playlistExtras);
-        this.startActivity(intent); 
     }
 
     @Override

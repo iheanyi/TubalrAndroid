@@ -36,4 +36,8 @@ public class VideoClass implements Serializable {
 		this.url = url;
 	}
 
+	
+	public String toString() {
+		return this.title;
+	}
 }

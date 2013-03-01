@@ -2,6 +2,7 @@ package com.iheanyiekechukwu.tubalr;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import android.app.Activity;
 import android.content.Context;
@@ -9,6 +10,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
@@ -20,7 +22,7 @@ public class PlaylistActivity extends Activity {
 	//private PlaylistAdapter playlistAdapter;
 	
 	private ArrayList<String> stringList;
-	private ArrayAdapter<String> playlistStringAdapter;
+	private ArrayAdapter<VideoClass> playlistStringAdapter;
 	private Context context;
 	private Intent i;
 	
@@ -43,11 +45,11 @@ public class PlaylistActivity extends Activity {
 		context = this.getBaseContext();
 		stringList = new ArrayList<String>();
 		playlistView = (ListView) findViewById(R.id.playlistView);
-		playlistStringAdapter = new ArrayAdapter<String>(context, android.R.layout.simple_list_item_1, stringList);
+		playlistStringAdapter = new ArrayAdapter<VideoClass>(context, android.R.layout.simple_list_item_1, videoList);
 		playlistView.setAdapter(playlistStringAdapter);
 
 		
-		while(it.hasNext()) {
+		/*while(it.hasNext()) {
 			VideoClass currentVideo = it.next();
 			
 			String info = currentVideo.getTitle();
@@ -55,7 +57,7 @@ public class PlaylistActivity extends Activity {
 			playlistStringAdapter.add(info);
 			playlistStringAdapter.notifyDataSetChanged();
 			Log.d("ADD", "Added " + info + " to list.");
-		}
+		}*/
 		
 
 	
@@ -100,6 +102,24 @@ public class PlaylistActivity extends Activity {
 		}
 		return super.onOptionsItemSelected(item);
 	}
+	
+/*	private class VideoAdapter extends ArrayAdapter<T> {
+		private LayoutInflater inflater;
+		private ArrayList<String> data;
+		
+		public VideoAdapter(Context context, int resource, ArrayList<T> objects) {
+			super(context, resource, objects);
+			
+			
+			// TODO Auto-generated constructor stub
+		}
+		
+		public View getView(int position, View convertView, ViewGroup parent) {
+			
+		}
+
+		
+	} */
 	
 	/*public class PlaylistAdapter extends ArrayAdapter<String> {
 		super(context, resource, data);

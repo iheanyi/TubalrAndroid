@@ -6,7 +6,7 @@
 
     <uses-sdk
         android:minSdkVersion="14"
-        android:targetSdkVersion="17" />
+        android:targetSdkVersion="16" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -36,6 +36,14 @@
         <activity
             android:name="com.iheanyiekechukwu.tubalr.SettingsActivity"
             android:label="@string/title_activity_settings" >
+        </activity>
+        <activity
+            android:name="com.iheanyiekechukwu.tubalr.PlaylistActivity"
+            android:label="@string/title_activity_playlist"
+            android:parentActivityName="com.iheanyiekechukwu.tubalr.HomeActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.iheanyiekechukwu.tubalr.HomeActivity" />
         </activity>
     </application>
 

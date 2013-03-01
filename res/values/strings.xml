@@ -4,11 +4,15 @@
     <string name="app_name">Tubalr</string>
     <string name="hello_world">Hello world!</string>
     <string name="menu_settings">Settings</string>
+
     <string-array name="home_menu">
-        <item >Top Genres</item>
-        <item >All Genres</item>
-        <item >Reddit Playlists</item>
+        <item>Top Genres</item>
+        <item>All Genres</item>
+        <item>Reddit Playlists</item>
     </string-array>
-        <string name="search_name">Search</string>
+
+    <string name="search_name">Search</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_playlist">PlaylistActivity</string>
 
 </resources>

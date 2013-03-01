@@ -39,21 +39,15 @@
         android:id="@+id/homeFixedListView"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:textColor="@color/white">
+        android:textColor="@color/white"
+        android:visibility="gone" >
+
     </ListView>
 
-    <TextView
-        android:id="@+id/dividerTextView"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-   		android:paddingLeft="16dp"
-        android:text="My Custom Playlists" />
-
     <ListView
-        android:id="@+id/customPlaylistView"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:textColor="@color/white">
+        android:id="@+id/songListView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
     </ListView>
 
 </LinearLayout>

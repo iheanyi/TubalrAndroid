@@ -33,8 +33,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Resources;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -60,6 +65,8 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
     private ListView menuListView;
     private EditText searchText;
     
+    private ProgressDialog prog;
+    
     
     // EchoNest URLs
     private static final String ECHONEST_SONG_URL = "http://developer.echonest.com/api/v4/artist/songs?api_key=OYJRQNQMCGIOZLFIW&name=";    
@@ -78,10 +85,18 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
     private ArrayList<VideoClass> videos;
     private ArrayList<VideoClass> playlist;
     
+    private ArrayAdapter<String> playlistViewAdapter;
+    
+    private ArrayList<String> playlistStringArray;
+    
+    private ListView playlistListView;
+    
     private Button justButton;
     private Button similarButton;
     
     private String tempID;
+    
+    MediaPlayer sound;
         
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,7 +104,7 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         setContentView(R.layout.activity_home);
         
         //controller = (MediaController) findViewById(R.id.mediaController);
-        
+        playlistListView = (ListView) findViewById(R.id.songListView);
         menuListView = (ListView) findViewById(R.id.homeFixedListView);
         
         context = this.getApplicationContext();
@@ -101,12 +116,17 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         videos = new ArrayList<VideoClass>();
         playlist = new ArrayList<VideoClass>();
         
+        playlistStringArray = new ArrayList<String>();
+        playlistViewAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, playlistStringArray);
         menuNames = res.getStringArray(R.array.home_menu);
+        
+        playlistListView.setAdapter(playlistViewAdapter);
         
         menuAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, menuNames);
         menuListView.setAdapter(menuAdapter);
         menuListView.setOnItemClickListener(this);
         
+        playlistListView.setOnItemClickListener(this);
         justButton = (Button) findViewById(R.id.justButton);
         justButton.setOnClickListener(this);
         
@@ -175,7 +195,8 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         
         protected void onPostExecute(String result) {
             //Toast.makeText(context, "Youtube Post Execute Task", Toast.LENGTH_SHORT).show();
-            processYoutubeJSON(result);
+            //prog.dismiss();
+        	processYoutubeJSON(result);
         }
         
     }
@@ -195,7 +216,9 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         
         protected void onPostExecute(String result) {
             //textView.setText(result);  // CAN access views in main thread
-            Toast.makeText(context, "EchoNest Post Execute Task", Toast.LENGTH_SHORT);
+            //prog.dismiss();
+            //prog  = null;
+        	//Toast.makeText(context, "EchoNest Post Execute Task", Toast.LENGTH_SHORT);
             processEchoNestJSON(result);
        }
         
@@ -225,6 +248,42 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
     public void onItemClick(AdapterView<?> adapter, View v, int id, long arg3) {
         // TODO Auto-generated method stub
         
+    	VideoClass selectedSong = playlist.get(id);
+    	
+    	/*switch (v.getId()) {
+//			case R.id.songListView:*/
+				
+				// Start playing the song on click
+				
+		       MediaPlayer sdrPlayer = new MediaPlayer();
+
+		       String testString = new String(selectedSong.getUrl().getBytes());
+		       Uri testUri = Uri.parse(testString);
+		        try {
+		            sdrPlayer.setDataSource(this, testUri);
+		            sdrPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+		            sdrPlayer.prepare(); //don't use prepareAsync for mp3 playback
+			        Toast.makeText(this, "Now Playing: " + selectedSong.getTitle(), Toast.LENGTH_SHORT).show();
+
+		        } catch (IOException e) {
+		            // TODO Auto-generated catch block
+		            e.printStackTrace();
+		        }
+
+		        sdrPlayer.start();
+		        
+		        Toast.makeText(this, "Item Selected: " + selectedSong.getTitle(), Toast.LENGTH_SHORT).show();
+				//break;
+				
+			/*case R.id.homeFixedListView:
+				
+				break;
+				
+			default:
+				break; */
+    	//}
+
+    			
     }
 
     public void decodeURL(String content) {
@@ -332,6 +391,25 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 				Log.d("DEBUG", "link:" + testString);
 				
 				playlist.add(new VideoClass(id, title, testString));
+				
+				//playlistStringArray.add(title);
+				
+				//playlistViewAdapter.add(title);
+				//playlistViewAdapter.notifyDataSetChanged();
+		        /*MediaPlayer sdrPlayer = new MediaPlayer();
+
+		        Uri testUri = Uri.parse(testString);
+		        try {
+		            sdrPlayer.setDataSource(this, testUri);
+		            sdrPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+		            sdrPlayer.prepare(); //don't use prepareAsync for mp3 playback
+		        } catch (IOException e) {
+		            // TODO Auto-generated catch block
+		            e.printStackTrace();
+		        }
+
+		        sdrPlayer.start();
+				Log.d("PLAY", Integer.toString(playlist.size()));*/
 			}
 		}
 		
@@ -398,15 +476,22 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
                 
             	//if(isUnique(entry) && isNotBlocked(entry) && isMusic(entry) && isNotCoverOrRemix(entry) && isNotLive(entry) && hasTitle(entry)) {
             	if(checkVideo(entry)) {
-                	Toast.makeText(this.context, "Adding new video . . . " + videoTitle + " - " + id, Toast.LENGTH_SHORT).show();
-            		videos.add(newVideo);
-                    Log.d("TUB", Integer.toString(videos.size()));
-                    Log.d("TUB", id + " - " + videoTitle);
-                    
-                    String yt_video_url = YOUTUBE_VIDEO_URL + id;
-                    YoutubeVideoTask myTask = new YoutubeVideoTask();
-                    myTask.execute(yt_video_url);
-                    break;
+            		if(videos.size() == 5) {
+            			break;
+            		}
+            		
+            		else {
+                    	Toast.makeText(this.context, "Adding new video . . . " + videoTitle + " - " + id, Toast.LENGTH_SHORT).show();
+                    	videos.add(newVideo);
+                        Log.d("TUB", Integer.toString(videos.size()));
+                        Log.d("TUB", id + " - " + videoTitle);
+                        
+                        String yt_video_url = YOUTUBE_VIDEO_URL + id;
+                        YoutubeVideoTask myTask = new YoutubeVideoTask();
+                        myTask.execute(yt_video_url);
+            		}
+
+                   // break;
                 }
             	
             	
@@ -414,7 +499,6 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
             }
             
             //Toast.makeText(this.context, Integer.toString(videos.size()), Toast.LENGTH_SHORT).show();
-
             
 
         } catch (JSONException e) {
@@ -619,26 +703,34 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
                 
                 // For each song, hit Youtube's Public API
                 for(int i = 0; i < songs.length(); ++i) {
-                    JSONObject song = songs.getJSONObject(i);
-                    String title = song.getString("title");
-                    
-                    String new_search = this.artistName + " - " + title;
-                    
-                    
-                    String yt_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(new_search, "UTF-8") + YOUTUBE_END_URL;
-                    YoutubeTask myTask = new YoutubeTask();
-                    myTask.execute(yt_url);
-                    //Toast.makeText(this.context, yt_url, Toast.LENGTH_SHORT).show();  
-                    Log.d("URL", yt_url);
+                	if(playlist.size() == 5) {
+                		Log.d("STOP", "Size reached 10!");
+                		break;
+                	}
+                	
+                	else {
+                        JSONObject song = songs.getJSONObject(i);
+                        String title = song.getString("title");
+                        
+                        String new_search = this.artistName + " - " + title;
+                        
+                    	//prog = ProgressDialog.show(this, "", "Fetching Youtube Songs . . .");
+                        String yt_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(new_search, "UTF-8") + YOUTUBE_END_URL;
+                        YoutubeTask myTask = new YoutubeTask();
+                        myTask.execute(yt_url);
+                        //Toast.makeText(this.context, yt_url, Toast.LENGTH_SHORT).show();  
+                        Log.d("URL", yt_url);	
+                	}
+
                 }
+                
+
+                // After all have been looped through/processed, start new Playlist activity
+                
                 
                 //Toast.makeText(this.context, Integer.toString(videos.size()), Toast.LENGTH_SHORT).show();
 
             }
-                // If the length 
-                //for(int i = 0; )
-            
-            
         } catch (JSONException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -646,7 +738,19 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+      
         
+        Intent intent = new Intent(this, PlaylistActivity.class);
+        ArrayList<VideoClass> playlistExtras = new ArrayList<VideoClass>();
+        
+        for(VideoClass v : playlist) {
+        	playlistExtras.add(v);
+        }
+
+        playlistExtras.addAll(playlist);
+        
+        intent.putExtra("playlistExtra", playlistExtras);
+        this.startActivity(intent); 
     }
 
     @Override
@@ -667,8 +771,8 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         	
           switch (v.getId()) {
                 case R.id.justButton:
-                   
                     try {
+                    	//prog = ProgressDialog.show(this, "", "Finding songs only for: "  + search);
                         String url = ECHONEST_SONG_URL + URLEncoder.encode(search, "UTF-8") + ECHONEST_RESULT_URL + Integer.toString(numOfSongs);
                         EchoSongTask myTask = new EchoSongTask();
                         myTask.execute(url);
@@ -676,11 +780,7 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
                     } catch (UnsupportedEncodingException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
-                    }
-                    
-             
-
-                    
+                    }                   
                     break;
                 case R.id.similarButton:
                     
@@ -728,45 +828,10 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
             e.printStackTrace();
         }
         
-
         return pageHTML;
     
     }
-        
-    public class VideoClass {
-        
-        private String id;
-        private String title;
-        private String url;
-        
-        public VideoClass(String id, String title) {
-        	this.id  = id;
-        	this.title = title;
-        	this.url = "";
-        }
-        public VideoClass(String id, String title, String url) {
-            this.id = id;
-            this.title = title;
-            this.url = url;
-        }
-        
-        
-        
-        public String getId() {
-        	return this.id;
-        }
-        
-        public String getTitle() {
-        	return this.title;
-        }
-
-		public String getUrl() {
-			return url;
-		}
-
-		public void setUrl(String url) {
-			this.url = url;
-		}
-    }
     
+    
+        
 }

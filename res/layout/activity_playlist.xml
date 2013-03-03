@@ -2,41 +2,55 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/bg_noise"
     android:orientation="vertical"
     tools:context=".PlaylistActivity" >
 
     <LinearLayout
         android:id="@+id/seekLayout"
         android:layout_width="fill_parent"
+        android:layout_alignParentTop="true"
         android:layout_height="wrap_content" >
 
         <TextView
             android:id="@+id/textView1"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Start Time?" />
+            android:padding="8dp"
+            android:text="0:00"
+            android:textColor="@color/white"/>
 
         <SeekBar
             android:id="@+id/songSeekBar"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1" />
+            android:layout_weight="3" />
 
         <TextView
             android:id="@+id/textView2"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:padding="8dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Song Length" />
+            android:textColor="@color/white"
+            android:text="4:00" />
 
     </LinearLayout>
 
+    <View
+        android:id="@+id/seekDivider"
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_below="@+id/seekLayout"
+        android:background="#DADADA"
+        android:padding="8dp" />
+    
     <LinearLayout
         android:id="@+id/controlLayout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/seekLayout"
+        android:layout_below="@+id/seekDivider"
         android:background="#000" >
 
         <LinearLayout
@@ -121,11 +135,12 @@
         android:layout_alignParentBottom="true"
         android:layout_below="@+id/listDivider"
         android:layout_weight="1"
-        android:padding = "16dp"
+        android:padding = "8dp"
         android:divider="#fff"
         android:dividerHeight="1px"
         android:background="@drawable/bg_noise" >
 
     </ListView>
+
 
 </RelativeLayout>

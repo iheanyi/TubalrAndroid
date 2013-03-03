@@ -80,9 +80,9 @@ public final class R {
         public static final int stop_mid=0x7f020029;
     }
     public static final class id {
-        public static final int action_settings=0x7f0b0023;
-        public static final int addButton=0x7f0b001b;
-        public static final int addDivider=0x7f0b001a;
+        public static final int action_settings=0x7f0b0024;
+        public static final int addButton=0x7f0b001c;
+        public static final int addDivider=0x7f0b001b;
         public static final int artistNameText=0x7f0b0006;
         public static final int controlLayout=0x7f0b0005;
         public static final int email=0x7f0b000d;
@@ -91,29 +91,30 @@ public final class R {
         public static final int imageButton2=0x7f0b0008;
         public static final int imageButton3=0x7f0b0009;
         public static final int justButton=0x7f0b0002;
-        public static final int listDivider=0x7f0b001c;
+        public static final int listDivider=0x7f0b001d;
         public static final int login=0x7f0b000f;
         public static final int login_form=0x7f0b000c;
         public static final int login_status=0x7f0b000a;
         public static final int login_status_message=0x7f0b000b;
-        public static final int menu_add=0x7f0b0021;
-        public static final int menu_forgot_password=0x7f0b0022;
-        public static final int menu_search=0x7f0b0020;
-        public static final int menu_settings=0x7f0b001f;
-        public static final int nextButton=0x7f0b0019;
+        public static final int menu_add=0x7f0b0022;
+        public static final int menu_forgot_password=0x7f0b0023;
+        public static final int menu_search=0x7f0b0021;
+        public static final int menu_settings=0x7f0b0020;
+        public static final int nextButton=0x7f0b001a;
         public static final int password=0x7f0b000e;
-        public static final int playButton=0x7f0b0018;
-        public static final int playlistView=0x7f0b001d;
-        public static final int previousButton=0x7f0b0017;
+        public static final int playButton=0x7f0b0019;
+        public static final int playlistView=0x7f0b001e;
+        public static final int previousButton=0x7f0b0018;
         public static final int searchControls=0x7f0b0000;
+        public static final int seekDivider=0x7f0b0015;
         public static final int seekLayout=0x7f0b0011;
-        public static final int shuffleButton=0x7f0b0015;
-        public static final int shuffleDivider=0x7f0b0016;
+        public static final int shuffleButton=0x7f0b0016;
+        public static final int shuffleDivider=0x7f0b0017;
         public static final int sign_in_button=0x7f0b0010;
         public static final int similarButton=0x7f0b0003;
         public static final int songSearchText=0x7f0b0001;
         public static final int songSeekBar=0x7f0b0013;
-        public static final int text1=0x7f0b001e;
+        public static final int text1=0x7f0b001f;
         public static final int textView1=0x7f0b0012;
         public static final int textView2=0x7f0b0014;
     }

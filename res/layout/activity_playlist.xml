@@ -6,20 +6,27 @@
     android:orientation="vertical"
     tools:context=".PlaylistActivity" >
 
+    <SurfaceView
+        android:id="@+id/videoStream"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="True" 
+        android:visibility="gone"/>
+
     <LinearLayout
         android:id="@+id/seekLayout"
+        android:layout_below="@+id/videoStream"
         android:layout_width="fill_parent"
-        android:layout_alignParentTop="true"
         android:layout_height="wrap_content" >
 
         <TextView
-            android:id="@+id/textView1"
+            android:id="@+id/timeText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:padding="8dp"
             android:text="0:00"
-            android:textColor="@color/white"/>
+            android:textColor="@color/white" />
 
         <SeekBar
             android:id="@+id/songSeekBar"
@@ -28,13 +35,13 @@
             android:layout_weight="3" />
 
         <TextView
-            android:id="@+id/textView2"
+            android:id="@+id/maxText"
             android:layout_width="0dp"
-            android:padding="8dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textColor="@color/white"
-            android:text="4:00" />
+            android:padding="8dp"
+            android:text="4:00"
+            android:textColor="@color/white" />
 
     </LinearLayout>
 
@@ -141,6 +148,5 @@
         android:background="@drawable/bg_noise" >
 
     </ListView>
-
 
 </RelativeLayout>

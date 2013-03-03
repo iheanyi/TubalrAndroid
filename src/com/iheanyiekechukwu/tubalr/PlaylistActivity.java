@@ -37,6 +37,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnCompletionListener;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -51,9 +52,11 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 
-public class PlaylistActivity extends Activity implements OnItemClickListener {
+public class PlaylistActivity extends Activity implements OnItemClickListener, OnSeekBarChangeListener, OnCompletionListener {
 
 	private ListView playlistView;
 	//private PlaylistAdapter playlistAdapter;
@@ -73,6 +76,11 @@ public class PlaylistActivity extends Activity implements OnItemClickListener {
     
     private MediaPlayer player;
 
+    private SeekBar seek;
+    
+    private TextView timeText, maxText;
+    
+    private int current = 0;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -89,12 +97,20 @@ public class PlaylistActivity extends Activity implements OnItemClickListener {
 		videoList = (ArrayList<VideoClass>) i.getSerializableExtra("playlistExtra");
 		Iterator<VideoClass> it = videoList.iterator();
 		
+		player = new MediaPlayer();
+		
+		timeText = (TextView) findViewById(R.id.timeText);
+		maxText = (TextView) findViewById(R.id.maxText);
 		context = this.getBaseContext();
 		stringList = new ArrayList<String>();
 		playlistView = (ListView) findViewById(R.id.playlistView);
 		adapter = new PlaylistAdapter(this, R.layout.basicitem, videoList);
 		playlistStringAdapter = new ArrayAdapter<VideoClass>(context, android.R.layout.simple_list_item_1, videoList);
 		playlistView.setAdapter(adapter);
+		
+		seek = (SeekBar) findViewById(R.id.songSeekBar);
+		
+		seek.setOnSeekBarChangeListener(this);
 
 		playlistView.setOnItemClickListener(this);
 		
@@ -120,6 +136,9 @@ public class PlaylistActivity extends Activity implements OnItemClickListener {
         String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(0).getId();
         YoutubeVideoTask myTask = new YoutubeVideoTask();
         myTask.execute(yt_video_url);
+        
+        player.setOnCompletionListener(this);
+       
 		
 		
 		/*while(it.hasNext()) {
@@ -307,7 +326,7 @@ public class PlaylistActivity extends Activity implements OnItemClickListener {
 			String[] CQS = contentDecoded.split(trimPattern.toString());
 			
 			// Just go with first quality for now
-			linksComposer(CQS[0], 1, title, id);
+ 			linksComposer(CQS[0], 1, title, id);
 		}
 		
 	}
@@ -334,45 +353,27 @@ public class PlaylistActivity extends Activity implements OnItemClickListener {
 				Log.d("DEBUG", "link:" + testString);
 				
 				videoList.get(selectedPosition).setUrl(testString);
-				
-		        MediaPlayer sdrPlayer = new MediaPlayer();
+				adapter.notifyDataSetChanged();
 
 		        Uri testUri = Uri.parse(testString);
+		        player.reset();
 		        try {
-		            sdrPlayer.setDataSource(this, testUri);
-		            sdrPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-		            sdrPlayer.prepare(); //don't use prepareAsync for mp3 playback
+		            player.setDataSource(this, testUri);
+		            player.setAudioStreamType(AudioManager.STREAM_MUSIC);
+		            player.prepare(); //don't use prepareAsync for mp3 playback
+		            
+		            seek.setProgress(0);
+		            seek.setMax(player.getDuration());
+		            maxText.setText(Integer.toString(player.getDuration()));
+
 		        } catch (IOException e) {
 		            // TODO Auto-generated catch block
 		            e.printStackTrace();
 		        }
 
-		        sdrPlayer.start();
+
+		        player.start();
 		        
-				// You probably want to play back what was selected.
-				
-				
-				
-				//playlist.add(new VideoClass(id, title, testString));
-				
-				//playlistStringArray.add(title);
-				
-				//playlistViewAdapter.add(title);
-				//playlistViewAdapter.notifyDataSetChanged();
-		        /*MediaPlayer sdrPlayer = new MediaPlayer();
-
-		        Uri testUri = Uri.parse(testString);
-		        try {
-		            sdrPlayer.setDataSource(this, testUri);
-		            sdrPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-		            sdrPlayer.prepare(); //don't use prepareAsync for mp3 playback
-		        } catch (IOException e) {
-		            // TODO Auto-generated catch block
-		            e.printStackTrace();
-		        }
-
-		        sdrPlayer.start();
-				Log.d("PLAY", Integer.toString(playlist.size()));*/
 			}
 		}
 		
@@ -438,4 +439,50 @@ public class PlaylistActivity extends Activity implements OnItemClickListener {
     	
     	
     }
+	@Override
+	public void onProgressChanged(SeekBar seekBar, int progress,
+			boolean fromUser) {
+		// TODO Auto-generated method stub
+		
+		if(fromUser) {
+			player.seekTo(progress);
+			timeText.setText(Integer.toString(player.getCurrentPosition()));
+		}
+		
+		else {
+			timeText.setText(Integer.toString(player.getCurrentPosition()));
+		}
+		
+	}
+
+	@Override
+	public void onStartTrackingTouch(SeekBar seekBar) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onStopTrackingTouch(SeekBar seekBar) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onCompletion(MediaPlayer mp) {
+		// TODO Auto-generated method stub
+		
+		Log.i("Completion Listener", "Song Complete");
+		mp.stop();
+		mp.reset();
+		
+		current++;
+		if(current == videoList.size()) {
+			current = 0;
+		}
+        String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(current).getId();
+        YoutubeVideoTask myTask = new YoutubeVideoTask();
+        myTask.execute(yt_video_url);
+		
+		
+	}
 }

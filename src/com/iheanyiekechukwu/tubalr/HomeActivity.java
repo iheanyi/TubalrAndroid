@@ -37,6 +37,9 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -53,6 +56,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.MediaController;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class HomeActivity extends Activity implements OnItemClickListener, OnClickListener {
@@ -104,7 +108,7 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         setContentView(R.layout.activity_home);
         
         //controller = (MediaController) findViewById(R.id.mediaController);
-        playlistListView = (ListView) findViewById(R.id.songListView);
+        //playlistListView = (ListView) findViewById(R.id.songListView);
         menuListView = (ListView) findViewById(R.id.homeFixedListView);
         
         context = this.getApplicationContext();
@@ -116,17 +120,34 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         videos = new ArrayList<VideoClass>();
         playlist = new ArrayList<VideoClass>();
         
-        playlistStringArray = new ArrayList<String>();
-        playlistViewAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, playlistStringArray);
+		getActionBar().setDisplayHomeAsUpEnabled(false);
+		getActionBar().setDisplayShowTitleEnabled(true);
+		getActionBar().setDisplayShowHomeEnabled(false);
+		
+	    int actionBarTitleId = Resources.getSystem().getIdentifier("action_bar_title", "id", "android");
+	    
+	    TextView actionBarTextView = (TextView) findViewById(actionBarTitleId);
+	    actionBarTextView.setTextColor(Color.WHITE);
+	    
+	    Typeface bookman = Typeface.createFromAsset(getAssets(), "fonts/bookos.ttf");
+	    actionBarTextView.setTypeface(bookman);
+		getActionBar().setTitle("tubalr");
+        
+        Drawable d = getResources().getDrawable(R.drawable.navbar);
+        
+        getActionBar().setBackgroundDrawable(d);
+        
+        //playlistStringArray = new ArrayList<String>();
+       //playlistViewAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, playlistStringArray);
         menuNames = res.getStringArray(R.array.home_menu);
         
-        playlistListView.setAdapter(playlistViewAdapter);
+//      playlistListView.setAdapter(playlistViewAdapter);
         
         menuAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, menuNames);
         menuListView.setAdapter(menuAdapter);
         menuListView.setOnItemClickListener(this);
         
-        playlistListView.setOnItemClickListener(this);
+        //playlistListView.setOnItemClickListener(this);
         justButton = (Button) findViewById(R.id.justButton);
         justButton.setOnClickListener(this);
         
@@ -201,9 +222,9 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 
         	}
         	
-        	else {
-        		this.cancel(true);
-        	}
+        	/*else {
+        		myTask.cancel(true)
+        	}*/
         }
         
     }
@@ -438,15 +459,10 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 	    		String yt_url;
 				try {
 					// Fetching Youtube Songs
-					if(videos.size() < 40) {
 						yt_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(name, "UTF-8") + YOUTUBE_END_URL;
 			    		YoutubeTask myTask = new YoutubeTask();
 			    		myTask.execute(yt_url);
-					}
-					
-					else {
-						break;
-					}
+										
 
 				} catch (UnsupportedEncodingException e) {
 					// TODO Auto-generated catch block
@@ -456,11 +472,12 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 	    		
 	    		
 	    	}
+	    	
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-  
+
 	}
 
 	public void processYoutubeJSON(String result) {
@@ -472,21 +489,6 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
             JSONArray entries = feed.getJSONArray("entry");
             
             for(int i = 0; i < entries.length(); ++i) {
-        		if(videos.size() == 40) {
-                    Intent intent = new Intent(this, PlaylistActivity.class);
-                    ArrayList<VideoClass> playlistExtras = new ArrayList<VideoClass>();
-                    
-                    for(VideoClass v : videos) {
-                    	playlistExtras.add(v);
-                    }
-
-                    playlistExtras.addAll(playlist);
-                    
-                    intent.putExtra("playlistExtra", playlistExtras);
-                    this.startActivity(intent);
-        			break;
-        		}
-        		
                 JSONObject entry = entries.getJSONObject(i);
                 JSONObject idNode = entry.getJSONObject("id");
                 String full_string = idNode.getString("$t");
@@ -508,6 +510,22 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
                 if(checkVideo(entry)) {
             	        Toast.makeText(this.context, "Adding new video . . . " + videoTitle + " - " + id, Toast.LENGTH_SHORT).show();
                     	videos.add(newVideo);
+                    	
+                    	if(videos.size() == 40) {
+                            Intent intent = new Intent(this, PlaylistActivity.class);
+                            ArrayList<VideoClass> playlistExtras = new ArrayList<VideoClass>();
+                            
+                            for(VideoClass v : videos) {
+                            	playlistExtras.add(v);
+                            }
+
+                            playlistExtras.addAll(playlist);
+                            
+                            intent.putExtra("playlistExtra", playlistExtras);
+                            this.startActivity(intent);
+                            
+                			break;
+                		}
                     	
                 		
                         Log.d("TUB", Integer.toString(videos.size()));

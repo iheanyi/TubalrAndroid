@@ -5,12 +5,126 @@
     android:orientation="vertical"
     tools:context=".PlaylistActivity" >
 
+    <LinearLayout
+        android:id="@+id/seekLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" >
+
+        <TextView
+            android:id="@+id/textView1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Start Time?" />
+
+        <SeekBar
+            android:id="@+id/songSeekBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Song Length" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/controlLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/seekLayout"
+        android:background="#000" >
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:background="@drawable/bg_noise" >
+
+            <ImageButton
+                android:id="@+id/shuffleButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:background="@null"
+                android:padding="16dp"
+                android:layout_weight="1"
+                android:src="@drawable/shuffle_mid" />
+
+            <View
+                android:id="@+id/shuffleDivider"
+                android:layout_width="1px"
+                android:layout_height="fill_parent" 
+                android:padding="8dp"
+                android:background="#DADADA"/>
+
+            <ImageButton
+                android:id="@+id/previousButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:background="@null"
+                android:layout_weight="1"
+                android:padding="16dp"
+                android:src="@drawable/first_mid" />
+
+            <ImageButton
+                android:id="@+id/playButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:background="@null"
+                android:layout_weight="1"
+                android:padding="16dp"
+                android:src="@drawable/play_mid" />
+
+            <ImageButton
+                android:id="@+id/nextButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:background="@null"
+                android:layout_weight="1"
+                android:padding="16dp"
+                android:src="@drawable/last_mid" />
+            
+            <View
+                android:id="@+id/addDivider"
+                android:layout_width="1px"
+                android:layout_height="fill_parent" 
+                android:padding="8dp"
+                android:background="#DADADA"/>
+
+            <ImageButton
+                android:id="@+id/addButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:background="@null"
+                android:layout_weight="1"
+                android:padding="16dp"
+                android:src="@drawable/plus_mid" />
+        </LinearLayout>
+
+    </LinearLayout>
+        <View
+                android:id="@+id/listDivider"
+                android:layout_width="fill_parent"
+                android:layout_height="1dp" 
+                android:layout_below="@+id/controlLayout"
+                android:padding="8dp"
+                android:background="#DADADA"/>
     <ListView
         android:id="@+id/playlistView"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true" >
+        android:layout_height="fill_parent"
+        android:layout_alignParentBottom="true"
+        android:layout_below="@+id/listDivider"
+        android:layout_weight="1"
+        android:padding = "16dp"
+        android:divider="#fff"
+        android:dividerHeight="1px"
+        android:background="@drawable/bg_noise" >
 
     </ListView>
 

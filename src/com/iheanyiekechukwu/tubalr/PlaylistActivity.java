@@ -476,9 +476,12 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
 		mp.reset();
 		
 		current++;
+		
+		// Loop around if you reach the end of the playlist
 		if(current == videoList.size()) {
 			current = 0;
 		}
+		
         String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(current).getId();
         YoutubeVideoTask myTask = new YoutubeVideoTask();
         myTask.execute(yt_video_url);

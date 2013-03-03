@@ -5,6 +5,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,6 +38,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnBufferingUpdateListener;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -56,7 +58,7 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 
-public class PlaylistActivity extends Activity implements OnItemClickListener, OnSeekBarChangeListener, OnCompletionListener {
+public class PlaylistActivity extends Activity implements OnItemClickListener, OnSeekBarChangeListener, OnCompletionListener, OnBufferingUpdateListener {
 
 	private ListView playlistView;
 	//private PlaylistAdapter playlistAdapter;
@@ -138,6 +140,7 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
         myTask.execute(yt_video_url);
         
         player.setOnCompletionListener(this);
+        player.setOnBufferingUpdateListener(this);
        
 		
 		
@@ -360,11 +363,12 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
 		        try {
 		            player.setDataSource(this, testUri);
 		            player.setAudioStreamType(AudioManager.STREAM_MUSIC);
-		            player.prepare(); //don't use prepareAsync for mp3 playback
+		            player.prepareAsync(); //don't use prepareAsync for mp3 playback
 		            
-		            seek.setProgress(0);
+		            //seek.setProgress(0);
 		            seek.setMax(player.getDuration());
-		            maxText.setText(Integer.toString(player.getDuration()));
+		            String time = String.format("%d:%02d", TimeUnit.MILLISECONDS.toMinutes(player.getDuration()), TimeUnit.MILLISECONDS.toSeconds(player.getDuration()) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(player.getDuration())));
+		            maxText.setText(getString(player.getDuration()));
 
 		        } catch (IOException e) {
 		            // TODO Auto-generated catch block
@@ -446,11 +450,13 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
 		
 		if(fromUser) {
 			player.seekTo(progress);
-			timeText.setText(Integer.toString(player.getCurrentPosition()));
+            String time = String.format("%d:%d", TimeUnit.MILLISECONDS.toMinutes(player.getDuration()), TimeUnit.MILLISECONDS.toSeconds(player.getDuration()) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(player.getDuration())));
+			timeText.setText(getTimeString(seekBar.getProgress()));
 		}
 		
 		else {
-			timeText.setText(Integer.toString(player.getCurrentPosition()));
+            String time = String.format("%d:%d", TimeUnit.MILLISECONDS.toMinutes(player.getDuration()), TimeUnit.MILLISECONDS.toSeconds(player.getDuration()) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(player.getDuration())));
+			timeText.setText(getTimeString(seekBar.getProgress()));
 		}
 		
 	}
@@ -486,6 +492,34 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
         YoutubeVideoTask myTask = new YoutubeVideoTask();
         myTask.execute(yt_video_url);
 		
+		
+	}
+	
+	private String getTimeString(long millis) {
+		StringBuffer buf = new StringBuffer();
+		
+		int hours =(int) millis/(1000*60*60);
+	    int minutes = (int) ( millis % (1000*60*60) ) / (1000*60);
+	    int seconds = (int) (( millis % (1000*60*60) ) % (1000*60) ) / 1000;
+
+	    buf
+        //.append(String.format("%02d", hours))
+        //.append(":")
+        .append(String.format("%02d", minutes))
+        .append(":")
+        .append(String.format("%02d", seconds));
+	    
+	    return buf.toString();
+	}
+
+	@Override
+	public void onBufferingUpdate(MediaPlayer mp, int percent) {
+		// TODO Auto-generated method stub
+		
+		if(mp.isPlaying() && seek != null) {
+			seek.setProgress(mp.getCurrentPosition());
+			timeText.setText(getTimeString(seek.getProgress()));
+		}
 		
 	}
 }

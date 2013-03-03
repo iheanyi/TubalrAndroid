@@ -141,6 +141,7 @@
         android:layout_height="fill_parent"
         android:layout_alignParentBottom="true"
         android:layout_below="@+id/listDivider"
+        android:choiceMode="singleChoice"
         android:layout_weight="1"
         android:padding = "8dp"
         android:divider="#fff"

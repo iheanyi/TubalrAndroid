@@ -40,6 +40,7 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnBufferingUpdateListener;
 import android.media.MediaPlayer.OnCompletionListener;
+import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -58,7 +59,7 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 
-public class PlaylistActivity extends Activity implements OnItemClickListener, OnSeekBarChangeListener, OnCompletionListener, OnBufferingUpdateListener {
+public class PlaylistActivity extends Activity implements OnItemClickListener, OnSeekBarChangeListener, OnCompletionListener, OnBufferingUpdateListener, OnPreparedListener {
 
 	private ListView playlistView;
 	//private PlaylistAdapter playlistAdapter;
@@ -110,6 +111,7 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
 		playlistStringAdapter = new ArrayAdapter<VideoClass>(context, android.R.layout.simple_list_item_1, videoList);
 		playlistView.setAdapter(adapter);
 		
+		playlistView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 		seek = (SeekBar) findViewById(R.id.songSeekBar);
 		
 		seek.setOnSeekBarChangeListener(this);
@@ -141,6 +143,7 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
         
         player.setOnCompletionListener(this);
         player.setOnBufferingUpdateListener(this);
+        player.setOnPreparedListener(this);
        
 		
 		
@@ -194,6 +197,9 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
 		// TODO Auto-generated method stub
 		
 		selectedPosition = pos;
+		current = pos;
+		
+		playlistView.setSelection(pos);
 		
 		//VideoClass selectedVideo = videoList.get(pos);
 		
@@ -363,20 +369,14 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
 		        try {
 		            player.setDataSource(this, testUri);
 		            player.setAudioStreamType(AudioManager.STREAM_MUSIC);
-		            player.prepareAsync(); //don't use prepareAsync for mp3 playback
+		            player.prepareAsync(); // buffer it asynchronously
 		            
 		            //seek.setProgress(0);
-		            seek.setMax(player.getDuration());
-		            String time = String.format("%d:%02d", TimeUnit.MILLISECONDS.toMinutes(player.getDuration()), TimeUnit.MILLISECONDS.toSeconds(player.getDuration()) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(player.getDuration())));
-		            maxText.setText(getString(player.getDuration()));
 
 		        } catch (IOException e) {
 		            // TODO Auto-generated catch block
 		            e.printStackTrace();
 		        }
-
-
-		        player.start();
 		        
 			}
 		}
@@ -450,12 +450,12 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
 		
 		if(fromUser) {
 			player.seekTo(progress);
-            String time = String.format("%d:%d", TimeUnit.MILLISECONDS.toMinutes(player.getDuration()), TimeUnit.MILLISECONDS.toSeconds(player.getDuration()) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(player.getDuration())));
+            //String time = String.format("%d:%d", TimeUnit.MILLISECONDS.toMinutes(player.getDuration()), TimeUnit.MILLISECONDS.toSeconds(player.getDuration()) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(player.getDuration())));
 			timeText.setText(getTimeString(seekBar.getProgress()));
 		}
 		
 		else {
-            String time = String.format("%d:%d", TimeUnit.MILLISECONDS.toMinutes(player.getDuration()), TimeUnit.MILLISECONDS.toSeconds(player.getDuration()) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(player.getDuration())));
+            //String time = String.format("%d:%d", TimeUnit.MILLISECONDS.toMinutes(player.getDuration()), TimeUnit.MILLISECONDS.toSeconds(player.getDuration()) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(player.getDuration())));
 			timeText.setText(getTimeString(seekBar.getProgress()));
 		}
 		
@@ -488,6 +488,7 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
 			current = 0;
 		}
 		
+		playlistView.setSelection(current);
         String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(current).getId();
         YoutubeVideoTask myTask = new YoutubeVideoTask();
         myTask.execute(yt_video_url);
@@ -522,4 +523,23 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
 		}
 		
 	}
+	
+	public MediaPlayer getMediaPlayer() {
+		if(player == null) {
+			player = new MediaPlayer();		
+		}
+		
+		return player;
+	}
+
+	@Override
+	public void onPrepared(MediaPlayer mp) {
+		// TODO Auto-generated method stub
+        seek.setMax(mp.getDuration());
+        maxText.setText(getTimeString(mp.getDuration()));	
+        player.start();
+
+	}
+	
+	
 }

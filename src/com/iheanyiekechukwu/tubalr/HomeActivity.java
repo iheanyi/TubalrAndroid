@@ -274,44 +274,8 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
     }
 
     public void onItemClick(AdapterView<?> adapter, View v, int id, long arg3) {
-        // TODO Auto-generated method stub
-        
-    	VideoClass selectedSong = playlist.get(id);
-    	
-    	/*switch (v.getId()) {
-//			case R.id.songListView:*/
-				
-				// Start playing the song on click
-				
-		       MediaPlayer sdrPlayer = new MediaPlayer();
-
-		       String testString = new String(selectedSong.getUrl().getBytes());
-		       Uri testUri = Uri.parse(testString);
-		        try {
-		            sdrPlayer.setDataSource(this, testUri);
-		            sdrPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-		            sdrPlayer.prepare(); //don't use prepareAsync for mp3 playback
-			        Toast.makeText(this, "Now Playing: " + selectedSong.getTitle(), Toast.LENGTH_SHORT).show();
-
-		        } catch (IOException e) {
-		            // TODO Auto-generated catch block
-		            e.printStackTrace();
-		        }
-
-		        sdrPlayer.start();
-		        
-		        Toast.makeText(this, "Item Selected: " + selectedSong.getTitle(), Toast.LENGTH_SHORT).show();
-				//break;
-				
-			/*case R.id.homeFixedListView:
-				
-				break;
-				
-			default:
-				break; */
-    	//}
-
-    			
+       // TODO Auto-generated method stub
+        		
     }
 
     public void decodeURL(String content) {
@@ -598,36 +562,6 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
     	}
     	
     	else {
-    		// Loop through and find the culprit
-    		
-			
-			if(!isNotBlocked(video)) {
-				Log.d("BLOCK", "Invalid");
-				//Toast.makeText(this.context, "It's because of NotBlocked", Toast.LENGTH_SHORT).show();
-			}
-			
-			if(!isMusic(video)) {
-				Log.d("MUSIC", "Invalid");
-				//Toast.makeText(this.context, "It's because of isMusic", Toast.LENGTH_SHORT).show();
-			}
-			
-			if(!isNotCoverOrRemix(video)) {
-				Log.d("COVER", "Invalid");
-
-				//Toast.makeText(this.context, "It's because of notCoverOrRemix", Toast.LENGTH_SHORT).show();
-			}
-			
-			if(!isNotLive(video)) {
-				Log.d("LIVE", "Invalid");
-
-				//Toast.makeText(this.context, "It's because of NotLive", Toast.LENGTH_SHORT).show();
-			}
-			
-			if(!hasTitle(video)) {
-				Log.d("TITLE", "Invalid");
-				//Toast.makeText(this.context, "It's because of hasTitle", Toast.LENGTH_SHORT).show();
-			}
-    		//Log.d("TEST", "Invalid video");
     		return false;
     	}
     }
@@ -804,6 +738,10 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         
         else {
         	
+        	if(videos.size() != 0) {
+        		videos.clear();
+        	}
+        	
         	int numOfSongs = v.getId() == R.id.justButton ? 40 : 20;
         	
           switch (v.getId()) {
@@ -819,6 +757,8 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
                         e.printStackTrace();
                     }                   
                     break;
+                    
+                    
                 case R.id.similarButton:
                     
                     try {

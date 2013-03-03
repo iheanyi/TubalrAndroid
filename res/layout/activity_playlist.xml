@@ -8,10 +8,9 @@
 
     <SurfaceView
         android:id="@+id/videoStream"
-        android:layout_width="fill_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="True" 
-        android:visibility="gone"/>
+        android:layout_alignParentTop="True" />
 
     <LinearLayout
         android:id="@+id/seekLayout"

@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,6 +49,9 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.SurfaceHolder;
+import android.view.SurfaceHolder.Callback;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -59,7 +62,7 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 
-public class PlaylistActivity extends Activity implements OnItemClickListener, OnSeekBarChangeListener, OnCompletionListener, OnBufferingUpdateListener, OnPreparedListener {
+public class PlaylistActivity extends Activity implements OnItemClickListener, OnSeekBarChangeListener, OnCompletionListener, OnBufferingUpdateListener, OnPreparedListener, Callback {
 
 	private ListView playlistView;
 	//private PlaylistAdapter playlistAdapter;
@@ -84,6 +87,9 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
     private TextView timeText, maxText;
     
     private int current = 0;
+    
+    private SurfaceView vidV;
+    private SurfaceHolder sh;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -95,7 +101,14 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
 		
 		i = this.getIntent();
 		
+		vidV = (SurfaceView) findViewById(R.id.videoStream);
+		sh = vidV.getHolder();
 		
+		sh.setFixedSize(640, 320);
+		
+		//Collections.shuffle(videoList);
+		
+		sh.addCallback(this);
 		//ArrayList<VideoClass> tempList = (ArrayList<VideoClass>) i.getSerializableExtra("playlistExtra");
 		videoList = (ArrayList<VideoClass>) i.getSerializableExtra("playlistExtra");
 		Iterator<VideoClass> it = videoList.iterator();
@@ -368,6 +381,7 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
 		        player.reset();
 		        try {
 		            player.setDataSource(this, testUri);
+		            player.setDisplay(sh);
 		            player.setAudioStreamType(AudioManager.STREAM_MUSIC);
 		            player.prepareAsync(); // buffer it asynchronously
 		            
@@ -539,6 +553,24 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
         maxText.setText(getTimeString(mp.getDuration()));	
         player.start();
 
+	}
+
+	@Override
+	public void surfaceChanged(SurfaceHolder arg0, int arg1, int arg2, int arg3) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void surfaceCreated(SurfaceHolder arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void surfaceDestroyed(SurfaceHolder arg0) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 	

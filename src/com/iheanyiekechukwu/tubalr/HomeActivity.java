@@ -220,13 +220,8 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         	if(videos.size() < 40) {
             	processYoutubeJSON(result);
 
-        	}
-        	
-        	/*else {
-        		myTask.cancel(true)
-        	}*/
-        }
-        
+        	}	
+        }   
     }
     
     private class EchoSongTask extends AsyncTask<String, Integer, String> {
@@ -278,6 +273,9 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         		
     }
 
+    /**
+     * @param content
+     */
     public void decodeURL(String content) {
 		// TODO Auto-generated method stub
 		Pattern startPattern = Pattern.compile("url_encoded_fmt_stream_map\\\": \\\"");
@@ -307,6 +305,10 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 		}
     }
 
+	/**
+	 * @param content
+	 * @return
+	 */
 	private String findVideoFilename(String content) {
 		// TODO Auto-generated method stub		
         Pattern videoPattern = Pattern.compile("<title>(.*?)</title>");
@@ -325,6 +327,10 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 		return title;
 	}
 	
+	/**
+	 * @param content
+	 * @return
+	 */
 	private String findVideoID(String content) {
 		//Pattern videoPattern = Pattern.compile("<input type=\\\"hidden\\\" name=\\\"video_id\\\" value=\\\"(.*?)\\\">");
 		Pattern videoPattern = Pattern.compile("\\\"video_id\\\": (.*?) \\\"");
@@ -348,6 +354,11 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 		return id;
 	}
 
+	/**
+	 * @param contentDecoded
+	 * @param title
+	 * @param id
+	 */
 	private void findCodecs(String contentDecoded, String title, String id) {
 		// TODO Auto-generated method stub
 		Pattern trimPattern = Pattern.compile(",");
@@ -361,6 +372,12 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 		
 	}
 
+	/**
+	 * @param block
+	 * @param i
+	 * @param title
+	 * @param id
+	 */
 	private void linksComposer(String block, int i, String title, String id) {
 		// TODO Auto-generated method stub
 		Pattern urlPattern = Pattern.compile("http://.*");
@@ -495,14 +512,14 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
                         Log.d("TUB", Integer.toString(videos.size()));
                         Log.d("TUB", id + " - " + videoTitle);
                         
+                        break;
+                        
+                        //break;
                         /*String yt_video_url = YOUTUBE_VIDEO_URL + id;
                         YoutubeVideoTask myTask = new YoutubeVideoTask();
                         myTask.execute(yt_video_url);*/
             	}
-
-            	
-            	
-
+      	
             }
             
             //Toast.makeText(this.context, Integer.toString(videos.size()), Toast.LENGTH_SHORT).show();
@@ -536,10 +553,10 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 	    		
 	    		else {
 	    			 
-	    		
-	    		String arrayTitle = videos.get(i).getTitle().toLowerCase().replaceAll(" *\\([^)]*\\)* ", "").replaceAll("[^a-zA-z ]/", "");
+	    		//Pattern titleStrip = Pattern.compile("")
+	    		String arrayTitle = videos.get(i).getTitle().toLowerCase().replaceAll(" *\\([^)]*\\)* ", "").replaceAll("[^a-zA-z ]", "");
 	    		String videoTitle = title.toLowerCase().replaceAll(" *\\([^)]*\\)* ", "").replaceAll("[^a-zA-z ]/", "");
-	    			if(videoTitle.equalsIgnoreCase(arrayTitle)) {
+	    			if(videoTitle.equals(arrayTitle)) {
 	    				//Toast.makeText(this.context, "NOT UNIQUE", Toast.LENGTH_SHORT).show();
 	    				Log.d("UNI", "NOT UNIQUE TITLE");
 	    				unique = false;
@@ -613,7 +630,7 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
     }
     
     public boolean hasTitle(JSONObject video) {
-    	String title;
+    	String title = "";
     	
 		try {
 			title = video.getJSONObject("title").getString("$t").trim();    	

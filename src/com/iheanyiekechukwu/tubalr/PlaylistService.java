@@ -79,7 +79,7 @@ public class PlaylistService extends IntentService {
 		
 		String html = getPage(url);
 		
-        Toast.makeText(this, url, Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, url, Toast.LENGTH_SHORT).show();
 		if(type.equals("just")) {
 			
         	processEchoNestJSON(html);
@@ -203,7 +203,7 @@ public class PlaylistService extends IntentService {
 	            
 	        	//if(isUnique(entry) && isNotBlocked(entry) && isMusic(entry) && isNotCoverOrRemix(entry) && isNotLive(entry) && hasTitle(entry)) {
 	            if(checkVideo(entry)) {
-	        	        Toast.makeText(this, "Adding new video . . . " + videoTitle + " - " + id, Toast.LENGTH_SHORT).show();
+	        	        //Toast.makeText(this, "Adding new video . . . " + videoTitle + " - " + id, Toast.LENGTH_SHORT).show();
 	                	videos.add(newVideo);
 	                	
 	                    Log.d("TUB", Integer.toString(videos.size()));

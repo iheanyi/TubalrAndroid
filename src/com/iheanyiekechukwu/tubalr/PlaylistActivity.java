@@ -97,15 +97,23 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
     private SurfaceView vidV;
     private SurfaceHolder sh;
     
-    private String artist;
-    
+    private String artist;    
     
     public MyResultReceiver mReceiver;
     
-    private BroadcastReceiver playlistReceiver = new BroadcastReceiver() {
+    private TextView currentTextView;
+    
+	private ProgressDialog pd;
+
+    
+    /*private BroadcastReceiver playlistReceiver = new BroadcastReceiver() {
     @Override
     	public void onReceive(Context context, Intent intent) {
     		Log.d("SHIT", "In Playlist Activity now!");
+    		
+    		if(videoList.size() > 0) {
+    			videoList = new ArrayList<VideoClass>();
+    		}
     		videoList = (ArrayList<VideoClass>) intent.getSerializableExtra("videos");
     		if(videoList.size() == 0) {
     			Toast.makeText(context, "ERROR BUILDING PLAYLIST", Toast.LENGTH_LONG).show();
@@ -125,9 +133,8 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
             myTask.execute(yt_video_url);
     		pd.dismiss();
     }
-};
+};*/
     
-	private ProgressDialog pd;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -151,6 +158,7 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 		intentFilter.addAction(PlaylistService.TRANSACTION_DONE);
 		
 		
+		currentTextView = (TextView) findViewById(R.id.currentTextView);
 		//registerReceiver(playlistReceiver, intentFilter);
 		Intent i = new Intent(this, PlaylistService.class);
         i.putExtra("url", url);
@@ -159,7 +167,7 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
         i.putExtra("rec", mReceiver);
 		startService(i);
 		
-		pd = ProgressDialog.show(this, "Building Playlist", "Go Intent Service Go!");
+		pd = ProgressDialog.show(this, "Building Playlist", "Finding Songs Relevant For Query: " + name);
 		
 		vidV = (SurfaceView) findViewById(R.id.videoStream);
 		sh = vidV.getHolder();
@@ -177,7 +185,7 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 		
 		timeText = (TextView) findViewById(R.id.timeText);
 		maxText = (TextView) findViewById(R.id.maxText);
-		context = this.getBaseContext();
+		context = this.getApplicationContext();
 		stringList = new ArrayList<String>();
 		/*playlistView = (ListView) findViewById(R.id.playlistView);
 		adapter = new PlaylistAdapter(this, R.layout.basicitem, videoList);
@@ -216,6 +224,8 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
         player.setOnCompletionListener(this);
         player.setOnBufferingUpdateListener(this);
         player.setOnPreparedListener(this);
+        
+        Log.d("LOC", "In Playlist Activity now");
        
 		
 		
@@ -272,6 +282,7 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 		current = pos;
 		
 		playlistView.setSelection(pos);
+		currentTextView.setText(videoList.get(pos).getTitle());
 		
 		//VideoClass selectedVideo = videoList.get(pos);
 		
@@ -562,6 +573,8 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 		}
 		
 		playlistView.setSelection(current);
+		
+		currentTextView.setText(videoList.get(current).getTitle());
         String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(current).getId();
         YoutubeVideoTask myTask = new YoutubeVideoTask();
         myTask.execute(yt_video_url);
@@ -610,7 +623,7 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 		// TODO Auto-generated method stub
         seek.setMax(mp.getDuration());
         maxText.setText(getTimeString(mp.getDuration()));	
-        player.start();
+       player.start();
 
 	}
 
@@ -639,6 +652,7 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 	            //show progress
 	            break;
 	        case FINISHED:
+	        	Log.d("RESULT", "Using onReceiveResult");
 	            videoList = (ArrayList<VideoClass>) resultData.getSerializable("videos");
 	            artist = resultData.getString("artist");
 	            
@@ -651,6 +665,12 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 	    		pd.dismiss();
 	    		adapter.notifyDataSetChanged();
 	    		
+	    		// Play the first song
+	            String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(0).getId();
+	            currentTextView.setText(videoList.get(0).getTitle());
+	            YoutubeVideoTask myTask = new YoutubeVideoTask();
+	            myTask.execute(yt_video_url);
+	    		
 	    		
 	            // do something interesting
 	            // hide progress
@@ -662,8 +682,8 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 	  public void onPause() {
 	    super.onPause();
 		mReceiver.setReceiver(null);
-	    unregisterReceiver(playlistReceiver);
-	    playlistReceiver = null;
+	    //unregisterReceiver(playlistReceiver);
+	    //playlistReceiver = null;
 	    
 	  }
 	  
@@ -672,13 +692,14 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 		  super.onResume();
 		  IntentFilter intentFilter = new IntentFilter();
 		  intentFilter.addAction(PlaylistService.TRANSACTION_DONE);
-		  registerReceiver(playlistReceiver, intentFilter);
+		  //registerReceiver(playlistReceiver, intentFilter);
 	  }
 	  
 	 @Override
 	 protected void onDestroy() {
-	  	unregisterReceiver(playlistReceiver);
-	  }
+		 super.onDestroy();
+	  	//unregisterReceiver(playlistReceiver);
+	 }
 	
 
 	

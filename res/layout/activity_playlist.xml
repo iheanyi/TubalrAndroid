@@ -70,10 +70,10 @@
                 android:id="@+id/shuffleButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:background="@null"
                 android:padding="16dp"
-                android:layout_weight="1"
-                android:src="@drawable/shuffle_mid" />
+                android:src="@drawable/player_shuffle" />
 
             <View
                 android:id="@+id/shuffleDivider"
@@ -86,28 +86,28 @@
                 android:id="@+id/previousButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@null"
                 android:layout_weight="1"
+                android:background="@null"
                 android:padding="16dp"
-                android:src="@drawable/first_mid" />
+                android:src="@drawable/player_first" />
 
             <ImageButton
                 android:id="@+id/playButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@null"
                 android:layout_weight="1"
+                android:background="@null"
                 android:padding="16dp"
-                android:src="@drawable/play_mid" />
+                android:src="@drawable/player_play" />
 
             <ImageButton
                 android:id="@+id/nextButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@null"
                 android:layout_weight="1"
+                android:background="@null"
                 android:padding="16dp"
-                android:src="@drawable/last_mid" />
+                android:src="@drawable/player_last" />
             
             <View
                 android:id="@+id/addDivider"
@@ -120,10 +120,11 @@
                 android:id="@+id/addButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@null"
                 android:layout_weight="1"
+                android:background="@null"
                 android:padding="16dp"
-                android:src="@drawable/plus_mid" />
+                android:src="@drawable/player_add" />
+
         </LinearLayout>
 
     </LinearLayout>

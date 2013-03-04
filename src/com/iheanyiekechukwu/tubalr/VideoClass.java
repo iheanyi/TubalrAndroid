@@ -2,7 +2,10 @@ package com.iheanyiekechukwu.tubalr;
 
 import java.io.Serializable;
 
-public class VideoClass implements Serializable {
+import android.os.Parcel;
+import android.os.Parcelable;
+
+public class VideoClass implements Serializable, Parcelable {
     private String id;
     private String title;
     private String url;
@@ -39,5 +42,15 @@ public class VideoClass implements Serializable {
 	
 	public String toString() {
 		return this.title;
+	}
+	@Override
+	public int describeContents() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+	@Override
+	public void writeToParcel(Parcel dest, int flags) {
+		// TODO Auto-generated method stub
+		
 	}
 }

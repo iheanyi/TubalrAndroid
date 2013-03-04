@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,8 +28,11 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -44,6 +45,8 @@ import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.ResultReceiver;
 import android.support.v4.app.NavUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -61,8 +64,9 @@ import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
+import android.widget.Toast;
 
-public class PlaylistActivity extends Activity implements OnItemClickListener, OnSeekBarChangeListener, OnCompletionListener, OnBufferingUpdateListener, OnPreparedListener, Callback {
+public class PlaylistActivity extends Activity implements MyResultReceiver.Receiver, OnItemClickListener, OnSeekBarChangeListener, OnCompletionListener, OnBufferingUpdateListener, OnPreparedListener, Callback {
 
 	private ListView playlistView;
 	//private PlaylistAdapter playlistAdapter;
@@ -72,7 +76,7 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
 	
 	private PlaylistAdapter adapter;
 	private Context context;
-	private Intent i;
+	private Intent intent;
 	
 	private ArrayList<VideoClass> videoList;
 	
@@ -90,6 +94,38 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
     
     private SurfaceView vidV;
     private SurfaceHolder sh;
+    
+    private String artist;
+    
+    
+    public MyResultReceiver mReceiver;
+//    private BroadcastReceiver playlistReceiver = new ResultReceiver(new Handler()) {
+//    @Override
+//    	public void onReceiveResult(Context context, Intent intent) {
+//    		Log.d("SHIT", "In Playlist Activity now!");
+//    		videoList = (ArrayList<VideoClass>) intent.getSerializableExtra("videos");
+//    		if(videoList.size() == 0) {
+//    			Toast.makeText(context, "ERROR BUILDING PLAYLIST", Toast.LENGTH_LONG).show();
+//    		}
+//    		
+//    		playlistView = (ListView) findViewById(R.id.playlistView);
+//    		adapter = new PlaylistAdapter(context, R.layout.basicitem, videoList);
+//    		playlistStringAdapter = new ArrayAdapter<VideoClass>(context, android.R.layout.simple_list_item_1, videoList);
+//    		playlistView.setAdapter(adapter);
+//    		
+//    		playlistView.setOnItemClickListener(PlaylistActivity.this);
+//
+//    		
+//    		adapter.notifyDataSetChanged();
+//            String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(0).getId();
+//            YoutubeVideoTask myTask = new YoutubeVideoTask();
+//            myTask.execute(yt_video_url);
+//    		pd.dismiss();
+//    		
+//    }
+//    };
+    
+	private ProgressDialog pd;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -99,7 +135,29 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
 		setupActionBar();
 		
 		
-		i = this.getIntent();
+		intent = this.getIntent();
+		
+		
+		mReceiver = new MyResultReceiver(new Handler());
+		mReceiver.setReceiver(this);
+		
+		String url = intent.getExtras().getString("url");
+		String type = intent.getExtras().getString("type");
+		String name = intent.getExtras().getString("artist");
+		
+		IntentFilter intentFilter = new IntentFilter();
+		intentFilter.addAction(PlaylistService.TRANSACTION_DONE);
+		
+		
+		//registerReceiver(playlistReceiver, intentFilter);
+		Intent i = new Intent(this, PlaylistService.class);
+        i.putExtra("url", url);
+        i.putExtra("type", type);
+        i.putExtra("artist", name);
+        i.putExtra("rec", mReceiver);
+		startService(i);
+		
+		pd = ProgressDialog.show(this, "Building Playlist", "Go Intent Service Go!");
 		
 		vidV = (SurfaceView) findViewById(R.id.videoStream);
 		sh = vidV.getHolder();
@@ -110,8 +168,8 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
 		
 		sh.addCallback(this);
 		//ArrayList<VideoClass> tempList = (ArrayList<VideoClass>) i.getSerializableExtra("playlistExtra");
-		videoList = (ArrayList<VideoClass>) i.getSerializableExtra("playlistExtra");
-		Iterator<VideoClass> it = videoList.iterator();
+		//videoList = (ArrayList<VideoClass>) i.getSerializableExtra("playlistExtra");
+		//Iterator<VideoClass> it = videoList.iterator();
 		
 		player = new MediaPlayer();
 		
@@ -119,17 +177,18 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
 		maxText = (TextView) findViewById(R.id.maxText);
 		context = this.getBaseContext();
 		stringList = new ArrayList<String>();
-		playlistView = (ListView) findViewById(R.id.playlistView);
+		/*playlistView = (ListView) findViewById(R.id.playlistView);
 		adapter = new PlaylistAdapter(this, R.layout.basicitem, videoList);
 		playlistStringAdapter = new ArrayAdapter<VideoClass>(context, android.R.layout.simple_list_item_1, videoList);
 		playlistView.setAdapter(adapter);
 		
-		playlistView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+		playlistView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);*/
+		
 		seek = (SeekBar) findViewById(R.id.songSeekBar);
 		
 		seek.setOnSeekBarChangeListener(this);
 
-		playlistView.setOnItemClickListener(this);
+		//playlistView.setOnItemClickListener(this);
 		
         Drawable d = getResources().getDrawable(R.drawable.navbar);
         
@@ -150,9 +209,7 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
 		
 		// Adapter has been loaded properly . . . Sooo, yeah, play the first song.
 		
-        String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(0).getId();
-        YoutubeVideoTask myTask = new YoutubeVideoTask();
-        myTask.execute(yt_video_url);
+
         
         player.setOnCompletionListener(this);
         player.setOnBufferingUpdateListener(this);
@@ -573,5 +630,64 @@ public class PlaylistActivity extends Activity implements OnItemClickListener, O
 		
 	}
 	
+	
+	@Override
+	public void onPause() {
+		super.onPause();
+		mReceiver.setReceiver(null);
+	}
+	
+	 public void onReceiveResult(int resultCode, Bundle resultData) {
+	     switch (resultCode) {
+	        case 0:
+	            //show progress
+	            break;
+	        case 1:
+	            videoList = (ArrayList<VideoClass>) resultData.getSerializable("videos");
+	            artist = resultData.getString("artist");
+	            
+	            playlistView = (ListView) findViewById(R.id.playlistView);
+	            adapter = new PlaylistAdapter(context, R.layout.basicitem, videoList);
+	    		playlistStringAdapter = new ArrayAdapter<VideoClass>(context, android.R.layout.simple_list_item_1, videoList);
+	    		playlistView.setAdapter(adapter);
+	    		
+	    		playlistView.setOnItemClickListener(this);
+	    		
+	    		adapter.notifyDataSetChanged();
+	    		pd.dismiss();
+	    		
+	            String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(0).getId();
+	            YoutubeVideoTask myTask = new YoutubeVideoTask();
+	            myTask.execute(yt_video_url);
+	    		
+	    		
+	            // do something interesting
+	            // hide progress
+	            break;
+
+	    }
+	}
+	 /* @Override
+	  public void onPause() {
+	    super.onPause();
+	    
+	    unregisterReceiver(playlistReceiver);
+	    playlistReceiver = null;
+	  }
+	  
+	  @Override
+	  public void onResume() {
+		  super.onResume();
+		  IntentFilter intentFilter = new IntentFilter();
+		  intentFilter.addAction(PlaylistService.TRANSACTION_DONE);
+		  registerReceiver(playlistReceiver, intentFilter);
+	  }
+	  
+	 @Override
+	 protected void onDestroy() {
+	  	unregisterReceiver(playlistReceiver);
+	  }*/
+	
+
 	
 }

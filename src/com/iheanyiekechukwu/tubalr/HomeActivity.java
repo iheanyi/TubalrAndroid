@@ -6,6 +6,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -100,8 +101,13 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
     
     private String tempID;
     
+    private ArrayList<String> artistSongList;
+    
+    boolean last = false;
     MediaPlayer sound;
         
+    private YoutubeTask ytTask;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -154,6 +160,8 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         similarButton = (Button) findViewById(R.id.similarButton);
         similarButton.setOnClickListener(this);
         
+        artistSongList = new ArrayList<String>();
+        
     }
 
     @Override
@@ -187,21 +195,6 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         return new DefaultHttpClient(conMgr, params);
     }
     
-    private class YoutubeVideoTask extends AsyncTask<String, Integer, String> {
-
-		@Override
-		protected String doInBackground(String... params) {
-			// TODO Auto-generated method stub
-			String URL = params[0];
-			String html = getPage(URL);
-			return html;
-		}
-    	
-		protected void onPostExecute(String result) {
-			decodeURL(result);
-		}
-    }
-    
     private class YoutubeTask extends AsyncTask<String, Integer, String> {
         @Override
         protected String doInBackground(String... params) {
@@ -217,10 +210,8 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         protected void onPostExecute(String result) {
             //Toast.makeText(context, "Youtube Post Execute Task", Toast.LENGTH_SHORT).show();
             //prog.dismiss();
-        	if(videos.size() < 40) {
-            	processYoutubeJSON(result);
-
-        	}	
+            processYoutubeJSON(result);
+       	
         }   
     }
     
@@ -273,158 +264,7 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         		
     }
 
-    /**
-     * @param content
-     */
-    public void decodeURL(String content) {
-		// TODO Auto-generated method stub
-		Pattern startPattern = Pattern.compile("url_encoded_fmt_stream_map\\\": \\\"");
-		Pattern endPattern = Pattern.compile("\\\", \\\"");
-		Matcher matcher = startPattern.matcher(content);
-		
-		String title = findVideoFilename(content);
-		String id = findVideoID(content);
-		
-		//String id = this.tempID;
-		if(matcher.find()) {
-			try {
-				String[] start = content.split(startPattern.toString());
-				String[] end = start[1].split(endPattern.toString());
-				
-				// Other decoding stuff
-				String contentDecoded = URLDecoder.decode(end[0], "UTF-8");
-				contentDecoded = contentDecoded.replaceAll(", ", "-");
-				contentDecoded = contentDecoded.replaceAll("sig=", "signature=");
-				contentDecoded = contentDecoded.replaceAll("x-flv", "flv");
-				contentDecoded = contentDecoded.replaceAll("\\\\u0026", "&");
-				Log.d("DEBUG", "contentDecoded: " + contentDecoded);
-				findCodecs(contentDecoded, title, id);
-			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
-			}
-		}
-    }
-
-	/**
-	 * @param content
-	 * @return
-	 */
-	private String findVideoFilename(String content) {
-		// TODO Auto-generated method stub		
-        Pattern videoPattern = Pattern.compile("<title>(.*?)</title>");
-        Matcher matcher = videoPattern.matcher(content);
-        String title;
-        String titleRaw;
-        if (matcher.find()) {
-            titleRaw = matcher.group().replaceAll("(<| - YouTube</)title>", "").replaceAll("&quot;", "\"").replaceAll("&amp;", "&").replaceAll("&#39;", "'");
-            title = titleRaw;
-        } else {
-            title = "Youtube Video";
-        }
-
-        Log.d("DEBUG", "findVideoFilename: " + title);
-        
-		return title;
-	}
-	
-	/**
-	 * @param content
-	 * @return
-	 */
-	private String findVideoID(String content) {
-		//Pattern videoPattern = Pattern.compile("<input type=\\\"hidden\\\" name=\\\"video_id\\\" value=\\\"(.*?)\\\">");
-		Pattern videoPattern = Pattern.compile("\\\"video_id\\\": (.*?) \\\"");
-		//Pattern endPattern = Pattern.compile("\\\"");
-		
-		Matcher matcher = videoPattern.matcher(content);
-		String id;
-		
-		if(matcher.find()) {
-			id = matcher.group();
-			id = id.replaceAll("\\\"video_id\\\": \\\"", "");
-			id = id.replaceAll("\\\", \\\"", "").trim();
-		}
-		
-		else {
-			id = "error";
-		}
-		
-		Log.d("DEBUG", "FindVideoID: " + id);
-		
-		return id;
-	}
-
-	/**
-	 * @param contentDecoded
-	 * @param title
-	 * @param id
-	 */
-	private void findCodecs(String contentDecoded, String title, String id) {
-		// TODO Auto-generated method stub
-		Pattern trimPattern = Pattern.compile(",");
-		Matcher matcher = trimPattern.matcher(contentDecoded);
-		if(matcher.find()) {
-			String[] CQS = contentDecoded.split(trimPattern.toString());
-			
-			// Just go with first quality for now
-			linksComposer(CQS[0], 1, title, id);
-		}
-		
-	}
-
-	/**
-	 * @param block
-	 * @param i
-	 * @param title
-	 * @param id
-	 */
-	private void linksComposer(String block, int i, String title, String id) {
-		// TODO Auto-generated method stub
-		Pattern urlPattern = Pattern.compile("http://.*");
-		Matcher urlMatcher = urlPattern.matcher(block);
-		if(urlMatcher.find()) {
-			Pattern sigPattern = Pattern.compile("signature=[[0-9][A-Z]]{40}\\.[[0-9][A-Z]]{40}");
-			Matcher sigMatcher = sigPattern.matcher(block);
-			if(sigMatcher.find()) {
-				String url = urlMatcher.group();
-    			url = url.replaceAll("&type=.*", "");
-    			url = url.replaceAll("&signature=.*", "");
-    			url = url.replaceAll("&quality=.*", "");
-    			url = url.replaceAll("&fallback_host=.*", "");
-    			Log.d("DEBUG", "url: " + url);
-    			String sig = sigMatcher.group();
-    			Log.d("DEBUG", "sig: " + sig);
-				String linkToAdd = url + "&" + sig;
-				linkToAdd.replaceAll("&itag=[0-9][0-9]&signature", "&signature");
-				String testString = new String(linkToAdd.getBytes());
-				Log.d("DEBUG", "link:" + testString);
-				
-				playlist.add(new VideoClass(id, title, testString));
-				
-				//playlistStringArray.add(title);
-				
-				//playlistViewAdapter.add(title);
-				//playlistViewAdapter.notifyDataSetChanged();
-		        /*MediaPlayer sdrPlayer = new MediaPlayer();
-
-		        Uri testUri = Uri.parse(testString);
-		        try {
-		            sdrPlayer.setDataSource(this, testUri);
-		            sdrPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-		            sdrPlayer.prepare(); //don't use prepareAsync for mp3 playback
-		        } catch (IOException e) {
-		            // TODO Auto-generated catch block
-		            e.printStackTrace();
-		        }
-
-		        sdrPlayer.start();
-				Log.d("PLAY", Integer.toString(playlist.size()));*/
-			}
-		}
-		
-	}
-
-	public void processSimilarJSON(String result) {
+    public void processSimilarJSON(String result) {
 		// TODO Auto-generated method stub
 		
     	JSONObject object;
@@ -492,23 +332,6 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
             	        Toast.makeText(this.context, "Adding new video . . . " + videoTitle + " - " + id, Toast.LENGTH_SHORT).show();
                     	videos.add(newVideo);
                     	
-                    	if(videos.size() == 40) {
-                            Intent intent = new Intent(this, PlaylistActivity.class);
-                            ArrayList<VideoClass> playlistExtras = new ArrayList<VideoClass>();
-                            
-                            for(VideoClass v : videos) {
-                            	playlistExtras.add(v);
-                            }
-
-                            playlistExtras.addAll(playlist);
-                            
-                            intent.putExtra("playlistExtra", playlistExtras);
-                            this.startActivity(intent);
-                            
-                			break;
-                		}
-                    	
-                		
                         Log.d("TUB", Integer.toString(videos.size()));
                         Log.d("TUB", id + " - " + videoTitle);
                         
@@ -521,15 +344,17 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
             	}
       	
             }
-            
-            //Toast.makeText(this.context, Integer.toString(videos.size()), Toast.LENGTH_SHORT).show();
-            
+                        
 
         } catch (JSONException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
         
+        // If the size of the videos list is 40 or the size of the number of results fetched from the
+        // JSON of EchoNest, start a new task.
+        
+
         
     }
     
@@ -668,8 +493,12 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 		}
     	return true;
     }
+    /* TODO Rather than fetching each song URL/ID immediately, 
+     * just build up the array first, then execute it? 
+     * Could lead to a possible performance increase for the application */
     public void processEchoNestJSON(String result) {
         // TODO Auto-generated method stub
+    	
         
         try {
             JSONObject object = new JSONObject(result);
@@ -678,26 +507,20 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
             Integer code = status.getInt("code");
             String message = status.getString("message");
             
-          //  if(code != 0) { 
-          //  }
-            
-           
             JSONArray songs = resp.getJSONArray("songs");
             
-            // If the artist doesn't exist or the length of the array is less than 10, execute Youtube command
+            // If the artist doesn't exist or the length of the array is less than 10, execute YouTube command to fetch songs
             if(code == 5 || songs.length() <= 10) {
             	String short_search = this.artistName;
             	String yt_short_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(this.artistName, "UTF-8") + YOUTUBE_END_URL;
             	YoutubeTask myTask = new YoutubeTask();
             	myTask.execute(yt_short_url);
-                
             }
             
             else {
-                
                 // For each song, hit Youtube's Public API
                 for(int i = 0; i < songs.length(); ++i) {
-                	if(videos.size() == 40) {
+                	if(artistSongList.size() == 40 || videos.size() == 40) {
                 		Log.d("STOP", "Size reached 40!");
                 		break;
                 	}
@@ -706,30 +529,11 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
                         JSONObject song = songs.getJSONObject(i);
                         String title = song.getString("title");
                         
-                        String new_search = this.artistName + " - " + title;                      
-                    	//prog = ProgressDialog.show(this, "", "Fetching Youtube Songs . . .");
-                        if(videos.size() < 40 ) {
-                            String yt_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(new_search, "UTF-8") + YOUTUBE_END_URL;
-                            YoutubeTask myTask = new YoutubeTask();
-                            myTask.execute(yt_url);
-                            //Toast.makeText(this.context, yt_url, Toast.LENGTH_SHORT).show();  
-                            Log.d("URL", yt_url);
-                        }
-                        
-                        else {
-                        	break;
-                        }
-
-                	}
-
+                        String new_search = this.artistName + " - " + title;
+                        artistSongList.add(new_search);
+                     }                	
                 }
                 
-
-                // After all have been looped through/processed, start new Playlist activity
-                
-                
-                //Toast.makeText(this.context, Integer.toString(videos.size()), Toast.LENGTH_SHORT).show();
-
             }
         } catch (JSONException e) {
             // TODO Auto-generated catch block
@@ -738,14 +542,50 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        
+        processSongList();
 
+                
     }
 
-    @Override
+    private void processSongList() {
+		// TODO Auto-generated method stub
+        for(String search : artistSongList) {
+            String yt_url;
+			try {
+				if(artistSongList.indexOf(search) >= artistSongList.size() - 1) {
+					last = true;
+				}
+				
+				if(videos.size() != 40 || videos.size() < artistSongList.size()) {
+
+					ytTask = new YoutubeTask();
+					yt_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(search, "UTF-8") + YOUTUBE_END_URL;
+					Intent i = new Intent(this, PlaylistService.class);
+					i.putExtra("url", yt_url);
+					//YoutubeTask myTask = new YoutubeTask();
+		            ytTask.execute(yt_url);
+		            Log.d("URL", yt_url); 
+				}
+
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
+        // After the song list has been processed and whatnot, start the new playlist activity
+
+
+        if(!ytTask.getStatus().equals(AsyncTask.Status.RUNNING)) {
+        	//startPlaylistActivity();
+        }
+	}
+
+	@Override
     public void onClick(View v) {
         // TODO Auto-generated method stub
         
-        String search = this.searchText.getText().toString();
+        String search = this.searchText.getText().toString().trim();
         
         this.artistName = search;
         
@@ -760,15 +600,19 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         	}
         	
         	int numOfSongs = v.getId() == R.id.justButton ? 40 : 20;
+        	String type = v.getId() == R.id.justButton ? "just" : "similar";
         	
           switch (v.getId()) {
                 case R.id.justButton:
                     try {
                     	//prog = ProgressDialog.show(this, "", "Finding songs only for: "  + search);
                         String url = ECHONEST_SONG_URL + URLEncoder.encode(search, "UTF-8") + ECHONEST_RESULT_URL + Integer.toString(numOfSongs);
-                        EchoSongTask myTask = new EchoSongTask();
-                        myTask.execute(url);
-                        //Toast.makeText(this.context, url, Toast.LENGTH_SHORT).show();
+                        
+                        Intent i = new Intent(this, PlaylistActivity.class);
+                        i.putExtra("url", url);
+                        i.putExtra("type", type);
+                        i.putExtra("artist", search);
+                        startActivity(i);
                     } catch (UnsupportedEncodingException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
@@ -776,10 +620,10 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
                     break;
                     
                     
-                case R.id.similarButton:
-                    
+                case R.id.similarButton:        
                     try {
                         String url = ECHONEST_SIMILAR_URL + URLEncoder.encode(search, "UTF-8") + ECHONEST_RESULT_URL + Integer.toString(numOfSongs);
+                        //String type = "similar";
                         EchoSimilarTask myTask = new EchoSimilarTask();
                         myTask.execute(url);
                         //Text(this.context, url, Toast.LENGTH_SHORT).show();
@@ -825,6 +669,20 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         return pageHTML;
     
     }
+    
+    /*public void startPlaylistActivity() {
+        Intent intent = new Intent(this, PlaylistActivity.class);
+        ArrayList<VideoClass> playlistExtras = new ArrayList<VideoClass>();
+        
+        for(VideoClass v : videos) {
+        	playlistExtras.add(v);
+        }
+
+        playlistExtras.addAll(playlist);
+        
+        intent.putExtra("playlistExtra", playlistExtras);
+        this.startActivity(intent);
+    }*/
     
     
         

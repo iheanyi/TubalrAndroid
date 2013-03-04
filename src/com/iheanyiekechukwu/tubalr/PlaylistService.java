@@ -431,14 +431,11 @@ public class PlaylistService extends IntentService {
 	            }
 	            
 	    		Bundle b = new Bundle();
-	    		//b.putParcelableArrayList("videos", videos2);
 	    		b.putSerializable("videos", videos);
 	    		b.putString("artist", artist);
 	    		receiver.send(STATUS_FINISHED, b);
 	    		this.stopSelf();
-	            notifyFinished(videos, artist);
-
-	            
+	            //notifyFinished(videos, artist);   
 	        }
 	    } catch (JSONException e) {
 	        // TODO Auto-generated catch block

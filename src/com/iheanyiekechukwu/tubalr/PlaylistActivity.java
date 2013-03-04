@@ -83,6 +83,8 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 	private int selectedPosition = 0;
 	
     private static final String YOUTUBE_VIDEO_URL = "https://youtube.com/watch?v=";
+
+	private static final int FINISHED = 1;
     
     private MediaPlayer player;
 
@@ -99,31 +101,31 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
     
     
     public MyResultReceiver mReceiver;
-//    private BroadcastReceiver playlistReceiver = new ResultReceiver(new Handler()) {
-//    @Override
-//    	public void onReceiveResult(Context context, Intent intent) {
-//    		Log.d("SHIT", "In Playlist Activity now!");
-//    		videoList = (ArrayList<VideoClass>) intent.getSerializableExtra("videos");
-//    		if(videoList.size() == 0) {
-//    			Toast.makeText(context, "ERROR BUILDING PLAYLIST", Toast.LENGTH_LONG).show();
-//    		}
-//    		
-//    		playlistView = (ListView) findViewById(R.id.playlistView);
-//    		adapter = new PlaylistAdapter(context, R.layout.basicitem, videoList);
-//    		playlistStringAdapter = new ArrayAdapter<VideoClass>(context, android.R.layout.simple_list_item_1, videoList);
-//    		playlistView.setAdapter(adapter);
-//    		
-//    		playlistView.setOnItemClickListener(PlaylistActivity.this);
-//
-//    		
-//    		adapter.notifyDataSetChanged();
-//            String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(0).getId();
-//            YoutubeVideoTask myTask = new YoutubeVideoTask();
-//            myTask.execute(yt_video_url);
-//    		pd.dismiss();
-//    		
-//    }
-//    };
+    
+    private BroadcastReceiver playlistReceiver = new BroadcastReceiver() {
+    @Override
+    	public void onReceive(Context context, Intent intent) {
+    		Log.d("SHIT", "In Playlist Activity now!");
+    		videoList = (ArrayList<VideoClass>) intent.getSerializableExtra("videos");
+    		if(videoList.size() == 0) {
+    			Toast.makeText(context, "ERROR BUILDING PLAYLIST", Toast.LENGTH_LONG).show();
+    		}
+    		
+    		playlistView = (ListView) findViewById(R.id.playlistView);
+    		adapter = new PlaylistAdapter(context, R.layout.basicitem, videoList);
+    		playlistStringAdapter = new ArrayAdapter<VideoClass>(context, android.R.layout.simple_list_item_1, videoList);
+    		playlistView.setAdapter(adapter);
+    		
+    		playlistView.setOnItemClickListener(PlaylistActivity.this);
+
+    		
+    		adapter.notifyDataSetChanged();
+            String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(0).getId();
+            YoutubeVideoTask myTask = new YoutubeVideoTask();
+            myTask.execute(yt_video_url);
+    		pd.dismiss();
+    }
+};
     
 	private ProgressDialog pd;
 	
@@ -631,18 +633,12 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 	}
 	
 	
-	@Override
-	public void onPause() {
-		super.onPause();
-		mReceiver.setReceiver(null);
-	}
-	
 	 public void onReceiveResult(int resultCode, Bundle resultData) {
 	     switch (resultCode) {
 	        case 0:
 	            //show progress
 	            break;
-	        case 1:
+	        case FINISHED:
 	            videoList = (ArrayList<VideoClass>) resultData.getSerializable("videos");
 	            artist = resultData.getString("artist");
 	            
@@ -652,13 +648,8 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 	    		playlistView.setAdapter(adapter);
 	    		
 	    		playlistView.setOnItemClickListener(this);
-	    		
-	    		adapter.notifyDataSetChanged();
 	    		pd.dismiss();
-	    		
-	            String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(0).getId();
-	            YoutubeVideoTask myTask = new YoutubeVideoTask();
-	            myTask.execute(yt_video_url);
+	    		adapter.notifyDataSetChanged();
 	    		
 	    		
 	            // do something interesting
@@ -667,12 +658,13 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 
 	    }
 	}
-	 /* @Override
+	  @Override
 	  public void onPause() {
 	    super.onPause();
-	    
+		mReceiver.setReceiver(null);
 	    unregisterReceiver(playlistReceiver);
 	    playlistReceiver = null;
+	    
 	  }
 	  
 	  @Override
@@ -686,7 +678,7 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 	 @Override
 	 protected void onDestroy() {
 	  	unregisterReceiver(playlistReceiver);
-	  }*/
+	  }
 	
 
 	

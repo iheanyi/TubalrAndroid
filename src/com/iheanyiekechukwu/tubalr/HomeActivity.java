@@ -34,8 +34,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Color;
@@ -48,6 +50,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -74,9 +77,9 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
     
     
     // EchoNest URLs
-    private static final String ECHONEST_SONG_URL = "http://developer.echonest.com/api/v4/artist/songs?api_key=OYJRQNQMCGIOZLFIW&name=";    
-    private static final String ECHONEST_SIMILAR_URL = "http://developer.echonest.com/api/v4/artist/similar?api_key=OYJRQNQMCGIOZLFIW&name=";
-    private static final String ECHONEST_RESULT_URL = "&format=json&callback=?&start=0&results=";
+    public static final String ECHONEST_SONG_URL = "http://developer.echonest.com/api/v4/artist/songs?api_key=OYJRQNQMCGIOZLFIW&name=";    
+    public static final String ECHONEST_SIMILAR_URL = "http://developer.echonest.com/api/v4/artist/similar?api_key=OYJRQNQMCGIOZLFIW&name=";
+    public static final String ECHONEST_RESULT_URL = "&format=json&callback=?&start=0&results=";
     
     // Youtube URLs
     private static final String YOUTUBE_SEARCH_URL = "https://gdata.youtube.com/feeds/api/videos?q=";
@@ -107,6 +110,9 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
     MediaPlayer sound;
         
     private YoutubeTask ytTask;
+    
+	private String s_url, s_artist, s_search, s_type = "";
+
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -601,6 +607,14 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         	
         	int numOfSongs = v.getId() == R.id.justButton ? 40 : 20;
         	String type = v.getId() == R.id.justButton ? "just" : "similar";
+        	String search_url = "";
+        	
+        	try {
+				search_url = v.getId() == R.id.justButton ? ECHONEST_SONG_URL + URLEncoder.encode(search, "UTF-8") + ECHONEST_RESULT_URL + Integer.toString(numOfSongs) : ECHONEST_SIMILAR_URL + URLEncoder.encode(search, "UTF-8") + ECHONEST_RESULT_URL + Integer.toString(numOfSongs);
+			} catch (UnsupportedEncodingException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			} 
         	
           switch (v.getId()) {
                 case R.id.justButton:
@@ -670,19 +684,100 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
     
     }
     
-    /*public void startPlaylistActivity() {
-        Intent intent = new Intent(this, PlaylistActivity.class);
-        ArrayList<VideoClass> playlistExtras = new ArrayList<VideoClass>();
-        
-        for(VideoClass v : videos) {
-        	playlistExtras.add(v);
-        }
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	switch(item.getItemId()) {
+	    	case R.id.menu_search:
+	    		
+	    		showSearchDialog();
+	    		return true;
+	    		
+	    	
+	    	
+	    	default:
+	    		return super.onOptionsItemSelected(item);
+    	}
+    }
 
-        playlistExtras.addAll(playlist);
-        
-        intent.putExtra("playlistExtra", playlistExtras);
-        this.startActivity(intent);
-    }*/
+	private void showSearchDialog() {
+		// TODO Auto-generated method stub
+		
+		String url, artist, search, type = "";
+		AlertDialog.Builder alert = new AlertDialog.Builder(this);
+		
+		alert.setTitle("Build New Playlist . . . ");
+		alert.setMessage("Enter Artist's Name");
+		final EditText input = new EditText(this);
+		//String artist = "";
+		alert.setView(input);
+		alert.setPositiveButton("Just", new DialogInterface.OnClickListener() {
+			
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				// TODO Auto-generated method stub
+				
+				s_artist = input.getEditableText().toString();
+				
+				if(s_artist.length() > 0) {
+					s_type = "just";
+					try {
+						s_url = ECHONEST_SONG_URL + URLEncoder.encode(s_artist, "UTF-8") + ECHONEST_RESULT_URL + "40";
+					
+					} catch (UnsupportedEncodingException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+					dialog.dismiss();
+					
+			        Intent i = new Intent(getBaseContext(), PlaylistActivity.class);
+			        i.putExtra("url", s_url);
+			        i.putExtra("type", s_type);
+			        i.putExtra("artist", s_artist);
+			        
+			        startActivity(i);
+				}
+				
+				else {
+					Toast.makeText(getBaseContext(), "Invalid input into the search box!", Toast.LENGTH_SHORT);
+				}
+
+			}
+		});
+		
+		alert.setNegativeButton("Similar", new DialogInterface.OnClickListener() {
+			
+			
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				// TODO Auto-generated method stub
+				
+				s_artist = input.getEditableText().toString();
+				s_type = "just";
+				try {
+					s_url = ECHONEST_SIMILAR_URL + URLEncoder.encode(s_artist, "UTF-8") + ECHONEST_SIMILAR_URL + "20";
+				
+				} catch (UnsupportedEncodingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				dialog.dismiss();
+				
+		        Intent i = new Intent(getBaseContext(), PlaylistActivity.class);
+		        i.putExtra("url", s_url);
+		        i.putExtra("type", s_type);
+		        i.putExtra("artist", s_artist);
+		        
+		        startActivity(i);
+				
+			}
+		});
+    
+		AlertDialog showAlert = alert.create();
+		showAlert.show();
+	
+		
+	}
     
     
         

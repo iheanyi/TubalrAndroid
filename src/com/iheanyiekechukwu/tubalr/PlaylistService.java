@@ -87,7 +87,7 @@ public class PlaylistService extends IntentService {
 		}
 		
 		else {
-			//processSimilarJSON(result);
+			processSimilarJSON(html);
 		}
 		
 		

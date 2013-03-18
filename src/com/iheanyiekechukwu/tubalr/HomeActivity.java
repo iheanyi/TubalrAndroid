@@ -715,7 +715,7 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 			public void onClick(DialogInterface dialog, int which) {
 				// TODO Auto-generated method stub
 				
-				s_artist = input.getEditableText().toString();
+				s_artist = input.getEditableText().toString().trim();
 				
 				if(s_artist.length() > 0) {
 					s_type = "just";
@@ -729,7 +729,7 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 					
 					dialog.dismiss();
 					
-			        Intent i = new Intent(getBaseContext(), PlaylistActivity.class);
+			        Intent i = new Intent(getApplicationContext(), PlaylistActivity.class);
 			        i.putExtra("url", s_url);
 			        i.putExtra("type", s_type);
 			        i.putExtra("artist", s_artist);
@@ -738,7 +738,8 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 				}
 				
 				else {
-					Toast.makeText(getBaseContext(), "Invalid input into the search box!", Toast.LENGTH_SHORT);
+					Toast.makeText(getApplicationContext(), "Invalid input into the search box!", Toast.LENGTH_SHORT).show();
+					dialog.dismiss();
 				}
 
 			}

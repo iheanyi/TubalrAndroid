@@ -10,6 +10,7 @@
         android:id="@+id/videoLayout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:padding="16dp"
         android:layout_alignParentTop="true"
         android:orientation="vertical" >
 
@@ -26,7 +27,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:padding="8dp"
-            android:text="Testing Text"
+            android:text=""
             android:textColor="#fff" />
 
     </LinearLayout>
@@ -43,17 +44,20 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:gravity="center"
+            android:gravity = "center"
+            android:layout_gravity="center"
+            android:layout_centerHorizontal="true"
             android:padding="8dp"
             android:text=""
-            android:textColor="@color/white" />
+            android:textColor="#33b5e5" />
 
         <SeekBar
             android:id="@+id/songSeekBar"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:padding="8dp"
-            android:layout_weight="3" />
+            android:layout_weight="3"
+            android:gravity="center"
+            android:padding="16dp" />
 
         <TextView
             android:id="@+id/maxText"
@@ -61,6 +65,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
+            android:layout_gravity="center"
             android:padding="8dp"
             android:text=""
             android:textColor="@color/white" />
@@ -94,7 +99,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@null"
+                android:background="?android:selectableItemBackground"
                 android:padding="16dp"
                 android:src="@drawable/ic_action_playback_schuffle" />
 
@@ -110,7 +115,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@null"
+                android:background="?android:selectableItemBackground"
                 android:padding="16dp"
                 android:src="@drawable/ic_action_playback_prev" />
 
@@ -119,16 +124,26 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@null"
+                android:background="?android:selectableItemBackground"
                 android:padding="16dp"
                 android:src="@drawable/ic_action_playback_play" />
+
+            <ImageButton
+                android:id="@+id/pauseButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="?android:selectableItemBackground"
+                android:padding="16dp"
+                android:src="@drawable/ic_action_playback_pause"
+                android:visibility="gone" />
 
             <ImageButton
                 android:id="@+id/nextButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@null"
+                android:background="?android:selectableItemBackground"
                 android:padding="16dp"
                 android:src="@drawable/ic_action_playback_next" />
 
@@ -144,7 +159,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@null"
+                android:background="?android:selectableItemBackground"
                 android:padding="16dp"
                 android:src="@drawable/player_add" />
         </LinearLayout>

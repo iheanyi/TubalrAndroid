@@ -29,7 +29,6 @@ import org.apache.http.util.EntityUtils;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -46,7 +45,6 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.ResultReceiver;
 import android.support.v4.app.NavUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -56,17 +54,18 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
-import android.widget.Toast;
 
-public class PlaylistActivity extends Activity implements MyResultReceiver.Receiver, OnItemClickListener, OnSeekBarChangeListener, OnCompletionListener, OnBufferingUpdateListener, OnPreparedListener, Callback {
+public class PlaylistActivity extends Activity implements OnClickListener, MyResultReceiver.Receiver, OnItemClickListener, OnSeekBarChangeListener, OnCompletionListener, OnBufferingUpdateListener, OnPreparedListener, Callback {
 
 	private ListView playlistView;
 	//private PlaylistAdapter playlistAdapter;
@@ -104,6 +103,11 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
     private TextView currentTextView;
     
 	private ProgressDialog pd;
+	
+	private ImageButton playButton;
+	private ImageButton pauseButton;
+	private ImageButton nextButton;
+	private ImageButton prevButton;
 
     
     /*private BroadcastReceiver playlistReceiver = new BroadcastReceiver() {
@@ -144,6 +148,9 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 		setupActionBar();
 		
 		
+		// IMPLEMENT VISUALIZER!
+		
+		
 		intent = this.getIntent();
 		
 		
@@ -168,7 +175,8 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 		startService(i);
 		
 		pd = ProgressDialog.show(this, "Building Playlist", "Finding Songs Relevant For Query: " + name);
-		
+		pd.setCancelable(true);
+
 		vidV = (SurfaceView) findViewById(R.id.videoStream);
 		sh = vidV.getHolder();
 		
@@ -187,6 +195,16 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 		maxText = (TextView) findViewById(R.id.maxText);
 		context = this.getApplicationContext();
 		stringList = new ArrayList<String>();
+		
+		playButton = (ImageButton) findViewById(R.id.playButton);
+		pauseButton = (ImageButton) findViewById(R.id.pauseButton);
+		nextButton = (ImageButton) findViewById(R.id.nextButton);
+		prevButton = (ImageButton) findViewById(R.id.previousButton);
+		
+		playButton.setOnClickListener(this);
+		pauseButton.setOnClickListener(this);
+		nextButton.setOnClickListener(this);
+		prevButton.setOnClickListener(this);
 		/*playlistView = (ListView) findViewById(R.id.playlistView);
 		adapter = new PlaylistAdapter(this, R.layout.basicitem, videoList);
 		playlistStringAdapter = new ArrayAdapter<VideoClass>(context, android.R.layout.simple_list_item_1, videoList);
@@ -623,7 +641,12 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 		// TODO Auto-generated method stub
         seek.setMax(mp.getDuration());
         maxText.setText(getTimeString(mp.getDuration()));	
-       player.start();
+        player.start();
+        
+        if(player.isPlaying()) {
+        	playButton.setVisibility(View.GONE);
+        	pauseButton.setVisibility(View.VISIBLE);
+        }
 
 	}
 
@@ -700,6 +723,75 @@ public class PlaylistActivity extends Activity implements MyResultReceiver.Recei
 		 super.onDestroy();
 	  	//unregisterReceiver(playlistReceiver);
 	 }
+
+	@Override
+	public void onClick(View v) {
+		// TODO Auto-generated method stub
+		
+		switch (v.getId()) {
+		
+		case R.id.playButton:
+			if(!player.isPlaying()) {
+				player.start();
+				pauseButton.setVisibility(View.VISIBLE);
+				playButton.setVisibility(View.GONE);
+				
+			}
+			break;
+			
+		case R.id.pauseButton:
+			if(player.isPlaying()) {
+				player.pause();
+				pauseButton.setVisibility(View.GONE);
+				playButton.setVisibility(View.VISIBLE);
+			}
+			break;
+		case R.id.nextButton:			
+			player.stop();
+			player.reset();
+			
+			current++;
+			
+			// Loop around if you reach the end of the playlist
+			if(current == videoList.size()) {
+				current = 0;
+			}
+			
+			playlistView.setSelection(current);
+			
+			currentTextView.setText(videoList.get(current).getTitle());
+	        String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(current).getId();
+	        YoutubeVideoTask myTask = new YoutubeVideoTask();
+	        myTask.execute(yt_video_url);
+	        
+			break;
+			
+		case R.id.previousButton:
+
+			player.stop();
+			player.reset();
+			
+			current--;
+			
+			// Loop around if you reach the end of the playlist
+			if(current == 0) {
+				current = 0;
+			}
+			
+			playlistView.setSelection(current);
+			
+			currentTextView.setText(videoList.get(current).getTitle());
+	        String yt_url = YOUTUBE_VIDEO_URL + videoList.get(current).getId();
+	        YoutubeVideoTask newTask = new YoutubeVideoTask();
+	        newTask.execute(yt_url);
+	        
+			break;
+			
+		default: 
+			break;
+		}
+		
+	}
 	
 
 	

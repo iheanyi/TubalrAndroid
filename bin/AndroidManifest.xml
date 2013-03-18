@@ -43,6 +43,7 @@
         <activity
             android:name="com.iheanyiekechukwu.tubalr.PlaylistActivity"
             android:label="@string/title_activity_playlist"
+			android:screenOrientation="portrait"
             android:parentActivityName="com.iheanyiekechukwu.tubalr.HomeActivity" 
             android:configChanges="keyboardHidden|orientation" >
             <meta-data

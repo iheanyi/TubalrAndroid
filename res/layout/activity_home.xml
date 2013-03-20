@@ -9,8 +9,8 @@
         android:id="@+id/searchControls"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-       	android:layout_alignParentTop="true"
-     >
+        android:layout_alignParentTop="true"
+        android:visibility="gone" >
 
         <EditText
             android:id="@+id/songSearchText"
@@ -39,7 +39,7 @@
         android:id="@+id/homeFixedListView"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/searchControls"
+		android:layout_alignParentTop="true"
         android:layout_above="@+id/controlLayout"
         android:textColor="@color/white"
         android:layout_weight="1"

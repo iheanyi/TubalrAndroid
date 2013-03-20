@@ -28,14 +28,16 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.Dialog;
 import android.app.IntentService;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.os.ResultReceiver;
 import android.util.Log;
-import android.widget.Toast;
+
+import com.bugsense.trace.BugSenseHandler;
+import com.bugsnag.android.Bugsnag;
 
 public class PlaylistService extends IntentService {
 	
@@ -49,6 +51,7 @@ public class PlaylistService extends IntentService {
     // Youtube URLs
     private static final String YOUTUBE_SEARCH_URL = "https://gdata.youtube.com/feeds/api/videos?q=";
     private static final String YOUTUBE_END_URL = "&orderby=relevance&start-index=1&max-results=10&v=2&format=5&alt=json";
+    private static final String YOUTUBE_END_FORTY_URL = "&orderby=relevance&start-index=1&max-results=40&v=2&format=5&alt=json";
     private static final String YOUTUBE_VIDEO_URL = "https://youtube.com/watch?v=";
 	
     private ArrayList<VideoClass> videos;
@@ -56,9 +59,16 @@ public class PlaylistService extends IntentService {
 	
 	private String artist;
 	public static final String TRANSACTION_DONE = "com.iheanyiekechukwu.tubalr.TRANSACTION_DONE";
-	private static final int STATUS_RUNNING = 0;
-	private static final int STATUS_FINISHED = 1;
+	
+	// Receiver Statuses
+	public static final int STATUS_RUNNING = 0;
+	public static final int STATUS_FINISHED = 1;
+	public static final int STATUS_ERROR = 2;
+	
 	ResultReceiver receiver;
+	
+    public static final String BUG_KEY = "b27d57ef";
+
 
 	public PlaylistService() {
 		super("PlaylistService");
@@ -67,6 +77,10 @@ public class PlaylistService extends IntentService {
 	@Override
 	protected void onHandleIntent(Intent intent) {
 		// TODO Auto-generated method stub
+		
+		BugSenseHandler.initAndStartSession(this, BUG_KEY);
+        Bugsnag.register(this, "1d479c585e3d333a05943f37bef208cf");
+        
 		receiver = intent.getParcelableExtra("rec");
 		String type = intent.getExtras().getString("type");
 		String url = intent.getExtras().getString("url");
@@ -74,16 +88,12 @@ public class PlaylistService extends IntentService {
 		videos = new ArrayList<VideoClass>();
 		artistSongList = new ArrayList<String>();
 		artist = intent.getExtras().getString("artist");
-		
-		receiver.send(STATUS_RUNNING, Bundle.EMPTY);
-		
+			
 		String html = getPage(url);
 		
         //Toast.makeText(this, url, Toast.LENGTH_SHORT).show();
 		if(type.equals("just")) {
-			
         	processEchoNestJSON(html);
-
 		}
 		
 		else {
@@ -144,8 +154,28 @@ public class PlaylistService extends IntentService {
 		
 		JSONObject object;
 		try {
+			
 			object = new JSONObject(result);
 			JSONObject response = object.getJSONObject("response");
+	        JSONObject status = response.getJSONObject("status");
+	        Integer code = status.getInt("code");
+	        Log.d("TEST", Integer.toString(code));
+	        String message = status.getString("message");
+	        
+	        
+	        
+	        // If the artist doesn't exist or the length of the array is less than 10, execute YouTube command to fetch songs
+	        if(code == 5) {
+	        	String short_search = artist;
+	        	String yt_short_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(short_search, "UTF-8") + YOUTUBE_END_FORTY_URL;
+	        	String html = getPage(yt_short_url);
+	        	String type = "youtube";
+	        	processYoutubeJSON(html, type);
+	        	//YoutubeTask myTask = new YoutubeTask();
+	        	//myTask.execute(yt_short_url);
+	        }
+	        
+	        
 		  	JSONArray artists = response.getJSONArray("artists");
 	    	
 	    	for(int i = 0; i < artists.length(); ++i) {
@@ -158,7 +188,9 @@ public class PlaylistService extends IntentService {
 						yt_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(name, "UTF-8") + YOUTUBE_END_URL;
 			    		//YoutubeTask myTask = new YoutubeTask();
 			    		//myTask.execute(yt_url);
-										
+			        	String html = getPage(yt_url);
+			        	String type = "similar";
+			        	processYoutubeJSON(html, type);			
 	
 				} catch (UnsupportedEncodingException e) {
 					// TODO Auto-generated catch block
@@ -172,11 +204,20 @@ public class PlaylistService extends IntentService {
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+		
+		Bundle b = new Bundle();
+		b.putSerializable("videos", videos);
+		b.putString("artist", artist);
+		receiver.send(STATUS_FINISHED, b);
+		this.stopSelf();
 	
 	}
 
-	public void processYoutubeJSON(String result) {
+	public void processYoutubeJSON(String result, String type) {
 	    // TODO Auto-generated method stub
 	    
 	    try {
@@ -184,6 +225,7 @@ public class PlaylistService extends IntentService {
 	        JSONObject feed = object.getJSONObject("feed");
 	        JSONArray entries = feed.getJSONArray("entry");
 	        
+	        Log.d("ENTRY", "Length is " + Integer.toString(entries.length()));
 	        for(int i = 0; i < entries.length(); ++i) {
 	            JSONObject entry = entries.getJSONObject(i);
 	            JSONObject idNode = entry.getJSONObject("id");
@@ -202,12 +244,15 @@ public class PlaylistService extends IntentService {
 	            
 	            
 	        	//if(isUnique(entry) && isNotBlocked(entry) && isMusic(entry) && isNotCoverOrRemix(entry) && isNotLive(entry) && hasTitle(entry)) {
-	            if(checkVideo(entry)) {
+	           
+	            if(type.equals("just")) {
+		            if(isUnique(entry) && isNotBlocked(entry) && isMusic(entry) && isNotCoverOrRemix(entry) && isNotLive(entry) && hasTitle(entry)) {
 	        	        //Toast.makeText(this, "Adding new video . . . " + videoTitle + " - " + id, Toast.LENGTH_SHORT).show();
 	                	videos.add(newVideo);
 	                	
 	                    Log.d("TUB", Integer.toString(videos.size()));
 	                    Log.d("TUB", id + " - " + videoTitle);
+	                    Log.d("TUB", "From the Just type");
 	                    
 	                    break;
 	                    
@@ -215,7 +260,39 @@ public class PlaylistService extends IntentService {
 	                    /*String yt_video_url = YOUTUBE_VIDEO_URL + id;
 	                    YoutubeVideoTask myTask = new YoutubeVideoTask();
 	                    myTask.execute(yt_video_url);*/
-	        	}
+		            }
+	            }
+	            
+	            else if(type.equals("similar")) {
+		            if(isNotBlocked(entry) && isMusic(entry) && isNotCoverOrRemix(entry) && isNotLive(entry)) {
+	        	        //Toast.makeText(this, "Adding new video . . . " + videoTitle + " - " + id, Toast.LENGTH_SHORT).show();
+	                	videos.add(newVideo);
+	                	
+	                    Log.d("TUB", Integer.toString(videos.size()));
+	                    Log.d("TUB", id + " - " + videoTitle);
+	                    Log.d("TUB", "From the similar type . . . ");
+	                    
+	                    break;
+	                    
+	                    //break;
+	                    /*String yt_video_url = YOUTUBE_VIDEO_URL + id;
+	                    YoutubeVideoTask myTask = new YoutubeVideoTask();
+	                    myTask.execute(yt_video_url);*/
+		            }
+	            }
+	            
+	            else if(type.equals("youtube")) {
+	            	if(isNotUserBanned(entry) && isNotBlocked(entry)) {
+	                	videos.add(newVideo);
+	                	
+	                    Log.d("TUB", Integer.toString(videos.size()));
+	                    Log.d("TUB", id + " - " + videoTitle);
+	                    Log.d("TUB", "From the Youtube Type");
+	                    
+	                    //break;
+	            	}
+	            }
+
 	  	
 	        }
 	                    
@@ -310,7 +387,7 @@ public class PlaylistService extends IntentService {
 	public boolean isNotCoverOrRemix(JSONObject video) {
 		try {
 			String title = video.getJSONObject("title").getString("$t").toLowerCase();
-			if(title.contains("cover") || title.contains("remix") || title.contains("alternate")) {
+			if(title.contains("cover") || title.contains("remix") || title.contains("alternate") || title.contains("interview")) {
 				return false;
 			}
 			
@@ -383,59 +460,75 @@ public class PlaylistService extends IntentService {
 	        JSONObject resp = object.getJSONObject("response");
 	        JSONObject status = resp.getJSONObject("status");
 	        Integer code = status.getInt("code");
+	        Log.d("TEST", Integer.toString(code));
 	        String message = status.getString("message");
 	        
-	        JSONArray songs = resp.getJSONArray("songs");
+	        
 	        
 	        // If the artist doesn't exist or the length of the array is less than 10, execute YouTube command to fetch songs
-	        if(code == 5 || songs.length() <= 10) {
+	        if(code == 5) {
 	        	String short_search = artist;
-	        	String yt_short_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(short_search, "UTF-8") + YOUTUBE_END_URL;
+	        	String yt_short_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(short_search, "UTF-8") + YOUTUBE_END_FORTY_URL;
 	        	String html = getPage(yt_short_url);
-	        	processYoutubeJSON(html);
+	        	String type = "youtube";
+	        	processYoutubeJSON(html, type);
 	        	//YoutubeTask myTask = new YoutubeTask();
 	        	//myTask.execute(yt_short_url);
 	        }
 	        
+	        
+	        
+	        
 	        else {
-	            // For each song, hit Youtube's Public API
-	            for(int i = 0; i < songs.length(); ++i) {
-	            	if(artistSongList.size() == 40 || videos.size() == 40) {
-	            		Log.d("STOP", "Size reached 40!");
-	            		break;
-	            	}
-	            	
-	            	else {
-	                    JSONObject song = songs.getJSONObject(i);
-	                    String title = song.getString("title");
-	                    
-	                    String search = artist + " - " + title;
-	                    artistSongList.add(search);
-	                    
-	                    try {
-							String yt_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(search, "UTF-8") + YOUTUBE_END_URL;
-						
-							//YoutubeTask myTask = new YoutubeTask();
-							//myTask.execute(yt_url);
-							
-							String html = getPage(yt_url);
-							processYoutubeJSON(html);
-	                    } catch (UnsupportedEncodingException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
+	        	JSONArray songs = resp.getJSONArray("songs");
+		        Log.d("TEST", Integer.toString(songs.length()));
 
-	                    
-	                    //String new_search = this.artistName + " - " + title;
-	                 }                	
-	            }
-	            
-	    		Bundle b = new Bundle();
-	    		b.putSerializable("videos", videos);
-	    		b.putString("artist", artist);
-	    		receiver.send(STATUS_FINISHED, b);
-	    		this.stopSelf();
-	            //notifyFinished(videos, artist);   
+		        if(songs.length() <= 10) {
+		           	String short_search = artist;
+		        	String yt_short_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(short_search, "UTF-8") + YOUTUBE_END_FORTY_URL;
+		        	String html = getPage(yt_short_url);
+		        	String type = "youtube";
+		        	processYoutubeJSON(html, type);
+		        }
+		        
+		        else {
+		        	// For each song, hit Youtube's Public API
+		            for(int i = 0; i < songs.length(); ++i) {
+		            	if(artistSongList.size() == 40 || videos.size() == 40) {
+		            		Log.d("STOP", "Size reached 40!");
+		            		break;
+		            	}
+		            	
+		            	else {
+		                    JSONObject song = songs.getJSONObject(i);
+		                    String title = song.getString("title");
+		                    
+		                    String search = artist + " - " + title;
+		                    artistSongList.add(search);
+		                    
+		                    try {
+								String yt_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(search, "UTF-8") + YOUTUBE_END_URL;
+							
+								//YoutubeTask myTask = new YoutubeTask();
+								//myTask.execute(yt_url);
+								
+								String html = getPage(yt_url);
+								String type = "just";
+								processYoutubeJSON(html, type);
+		                    } catch (UnsupportedEncodingException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+
+		                    
+		                    //String new_search = this.artistName + " - " + title;
+		                 }                	
+		            }
+		            
+
+		            //notifyFinished(videos, artist); 
+		        }
+		        
 	        }
 	    } catch (JSONException e) {
 	        // TODO Auto-generated catch block
@@ -443,8 +536,15 @@ public class PlaylistService extends IntentService {
 	    } catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} 
-	    	
+		}
+	    
+		Bundle b = new Bundle();
+		b.putSerializable("videos", videos);
+		b.putString("artist", artist);
+		receiver.send(STATUS_FINISHED, b);
+		//b.putSerializable("videos", videos);
+
+		this.stopSelf();
 	            
 	}
 
@@ -479,7 +579,8 @@ public class PlaylistService extends IntentService {
 		    protected void onPostExecute(String result) {
 		        //Toast.makeText(context, "Youtube Post Execute Task", Toast.LENGTH_SHORT).show();
 		        //prog.dismiss();
-		        processYoutubeJSON(result);
+		    	String type = "youtube";
+		        processYoutubeJSON(result, type);
 		   	
 		    }   
 		}

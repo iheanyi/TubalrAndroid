@@ -10,6 +10,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+//Make sure you import Apphance (see: Step 6)
+import com.apphance.android.Apphance;
+import com.bugsense.trace.BugSenseHandler;
+
+
+//Optionally import Apphance's logging functions (see: Step 7)
+//import com.apphance.android.Log;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -63,6 +71,9 @@ import android.widget.MediaController;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bugsnag.android.Bugsnag;
+
+
 public class HomeActivity extends Activity implements OnItemClickListener, OnClickListener {
     MediaController controller;
     
@@ -113,10 +124,20 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
     
 	private String s_url, s_artist, s_search, s_type = "";
 
+    public static final String APP_KEY = "9efd11ff27117b5000f4d69d9e6aa17a0332e53e";
+    public static final String BUG_KEY = "b27d57ef";
     
+    //public static final BUG_KEY = ""
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+       // Apphance.startNewSession(this, APP_KEY, Apphance.Mode.QA);
+        BugSenseHandler.initAndStartSession(this, BUG_KEY);
+       
+
+        Bugsnag.register(this, "1d479c585e3d333a05943f37bef208cf");
+
         setContentView(R.layout.activity_home);
         
         //controller = (MediaController) findViewById(R.id.mediaController);
@@ -715,7 +736,12 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 			public void onClick(DialogInterface dialog, int which) {
 				// TODO Auto-generated method stub
 				
+				
+
+
 				s_artist = input.getEditableText().toString().trim();
+				BugSenseHandler.sendEvent("User searched for " + s_artist);
+
 				
 				if(s_artist.length() > 0) {
 					s_type = "just";
@@ -753,9 +779,9 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 				// TODO Auto-generated method stub
 				
 				s_artist = input.getEditableText().toString();
-				s_type = "just";
+				s_type = "similar";
 				try {
-					s_url = ECHONEST_SIMILAR_URL + URLEncoder.encode(s_artist, "UTF-8") + ECHONEST_SIMILAR_URL + "20";
+					s_url = ECHONEST_SIMILAR_URL + URLEncoder.encode(s_artist, "UTF-8") + ECHONEST_RESULT_URL + "40";
 				
 				} catch (UnsupportedEncodingException e) {
 					// TODO Auto-generated catch block

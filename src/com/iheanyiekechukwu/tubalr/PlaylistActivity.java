@@ -3,6 +3,7 @@ package com.iheanyiekechukwu.tubalr;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,9 +28,14 @@ import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
+import com.bugsense.trace.BugSenseHandler;
+import com.bugsnag.android.Bugsnag;
+
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
@@ -37,6 +43,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
+import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnBufferingUpdateListener;
 import android.media.MediaPlayer.OnCompletionListener;
@@ -59,13 +66,15 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.SeekBar;
+import android.widget.Toast;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 
-public class PlaylistActivity extends Activity implements OnClickListener, MyResultReceiver.Receiver, OnItemClickListener, OnSeekBarChangeListener, OnCompletionListener, OnBufferingUpdateListener, OnPreparedListener, Callback {
+public class PlaylistActivity extends Activity implements OnClickListener, MyResultReceiver.Receiver, OnItemClickListener, OnSeekBarChangeListener, OnCompletionListener, OnBufferingUpdateListener, OnPreparedListener, Callback, OnAudioFocusChangeListener {
 
 	private ListView playlistView;
 	//private PlaylistAdapter playlistAdapter;
@@ -108,6 +117,15 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 	private ImageButton pauseButton;
 	private ImageButton nextButton;
 	private ImageButton prevButton;
+	
+    // EchoNest URLs
+    public static final String ECHONEST_SONG_URL = "http://developer.echonest.com/api/v4/artist/songs?api_key=OYJRQNQMCGIOZLFIW&name=";    
+    public static final String ECHONEST_SIMILAR_URL = "http://developer.echonest.com/api/v4/artist/similar?api_key=OYJRQNQMCGIOZLFIW&name=";
+    public static final String ECHONEST_RESULT_URL = "&format=json&callback=?&start=0&results=";
+
+    public static final String BUG_KEY = "b27d57ef";
+    
+	private String s_url, s_artist, s_search, s_type = "";
 
     
     /*private BroadcastReceiver playlistReceiver = new BroadcastReceiver() {
@@ -145,6 +163,10 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_playlist);
 		// Show the Up button in the action bar.
+		
+        BugSenseHandler.initAndStartSession(this, BUG_KEY);
+        Bugsnag.register(this, "1d479c585e3d333a05943f37bef208cf");
+
 		setupActionBar();
 		
 		
@@ -189,7 +211,14 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 		//videoList = (ArrayList<VideoClass>) i.getSerializableExtra("playlistExtra");
 		//Iterator<VideoClass> it = videoList.iterator();
 		
-		player = new MediaPlayer();
+		if(player != null) {
+			player.stop();
+		}
+		
+		
+		else {
+			player = new MediaPlayer();
+		}
 		
 		timeText = (TextView) findViewById(R.id.timeText);
 		maxText = (TextView) findViewById(R.id.maxText);
@@ -288,6 +317,11 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 			//
 			NavUtils.navigateUpFromSameTask(this);
 			return true;
+			
+    	case R.id.menu_search: 		
+    		showSearchDialog();
+    		return true;
+    		
 		}
 		return super.onOptionsItemSelected(item);
 	}
@@ -657,8 +691,13 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 	}
 
 	@Override
-	public void surfaceCreated(SurfaceHolder arg0) {
+	public void surfaceCreated(SurfaceHolder holder) {
 		// TODO Auto-generated method stub
+		if(player == null) {
+			player = new MediaPlayer();
+		}
+		
+		player.setDisplay(holder);
 		
 	}
 
@@ -674,6 +713,7 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 	        case 0:
 	            //show progress
 	            break;
+	           
 	        case FINISHED:
 	        	Log.d("RESULT", "Using onReceiveResult");
 	            videoList = (ArrayList<VideoClass>) resultData.getSerializable("videos");
@@ -687,6 +727,14 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 	    		playlistView.setOnItemClickListener(this);
 	    		pd.dismiss();
 	    		adapter.notifyDataSetChanged();
+
+	    		if(player != null) {
+	    			player.stop();
+	    			player.reset();
+	    		}
+	    		
+	    		
+	            
 	    		
 	    		// Play the first song
 	            String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(0).getId();
@@ -704,7 +752,9 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 	  @Override
 	  public void onPause() {
 	    super.onPause();
-		mReceiver.setReceiver(null);
+	    if(mReceiver != null) {
+			mReceiver.setReceiver(null);
+	    }
 	    //unregisterReceiver(playlistReceiver);
 	    //playlistReceiver = null;
 	    
@@ -771,11 +821,14 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 			player.stop();
 			player.reset();
 			
-			current--;
 			
 			// Loop around if you reach the end of the playlist
 			if(current == 0) {
 				current = 0;
+			}
+			
+			else {
+				current--;
 			}
 			
 			playlistView.setSelection(current);
@@ -790,6 +843,130 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 		default: 
 			break;
 		}
+		
+	}
+	
+	private void showSearchDialog() {
+		// TODO Auto-generated method stub
+		
+		String url, artist, search, type = "";
+		AlertDialog.Builder alert = new AlertDialog.Builder(this);
+		
+		alert.setTitle("Build New Playlist . . . ");
+		alert.setMessage("Enter Artist's Name");
+		final EditText input = new EditText(this);
+		//String artist = "";
+		alert.setView(input);
+
+		alert.setPositiveButton("Just", new DialogInterface.OnClickListener() {
+			
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				// TODO Auto-generated method stub
+				
+				s_artist = input.getEditableText().toString().trim();
+				
+				if(s_artist.length() > 0) {
+					s_type = "just";
+					try {
+						s_url = ECHONEST_SONG_URL + URLEncoder.encode(s_artist, "UTF-8") + ECHONEST_RESULT_URL + "40";
+					
+					} catch (UnsupportedEncodingException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+					dialog.dismiss();
+					
+					if(player != null) {
+						//player.stop();
+						//player.reset();
+						Log.d("SWAG", "Testing junts");
+					}
+					
+					Toast.makeText(getBaseContext(), "Building new playlist . . . ", Toast.LENGTH_LONG).show();
+
+					
+					Intent i = new Intent(getBaseContext(), PlaylistService.class);
+			        i.putExtra("url", s_url);
+			        i.putExtra("type", s_type);
+			        i.putExtra("artist", s_artist);
+			        i.putExtra("rec", mReceiver);
+			        
+					startService(i);
+				}
+				
+				else {
+					Toast.makeText(getApplicationContext(), "Invalid input into the search box!", Toast.LENGTH_SHORT).show();
+					//dialog.dismiss();
+				}
+
+			}
+		});
+		alert.setNegativeButton("Similar", new DialogInterface.OnClickListener() {
+			
+			
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				// TODO Auto-generated method stub
+				
+				s_artist = input.getEditableText().toString();
+				if(s_artist.length() > 0) {
+					s_type = "similar";
+					try {
+						s_url = ECHONEST_SIMILAR_URL + URLEncoder.encode(s_artist, "UTF-8") + ECHONEST_RESULT_URL + "40";
+					
+					} catch (UnsupportedEncodingException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+					dialog.dismiss();
+					
+					if(player != null) {
+						//player.stop();
+						//player.reset();
+						Log.d("SWAG", "Testing junts");
+					}
+					
+					Toast.makeText(getBaseContext(), "Building new playlist . . . ", Toast.LENGTH_LONG).show();
+	
+					
+					Intent i = new Intent(getBaseContext(), PlaylistService.class);
+			        i.putExtra("url", s_url);
+			        i.putExtra("type", s_type);
+			        i.putExtra("artist", s_artist);
+			        i.putExtra("rec", mReceiver);
+			        
+					startService(i);
+				}
+				
+				else {
+					Toast.makeText(getApplicationContext(), "Invalid input into the search box!", Toast.LENGTH_SHORT).show();
+					//dialog.dismiss();
+				}
+			}
+		});
+    
+		AlertDialog showAlert = alert.create();
+		showAlert.show();
+		
+		
+		/*if(!showAlert.isShowing()) {
+			if(player != null) {
+				player.stop();
+				player.reset();
+			}
+			
+			Log.d("DEBUG", "VIDEO LIST NEW SEARCH FROM DIALOG.");
+
+		}*/
+	}
+
+	@Override
+	public void onAudioFocusChange(int focusChange) {
+		// TODO Auto-generated method stub
+		//AudioManager manager = new AudioManager();
 		
 	}
 	

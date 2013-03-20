@@ -4,5 +4,9 @@
 	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
+	<classpathentry kind="lib" path="libs/apphance-library.jar"/>
+	<classpathentry kind="lib" path="libs/bugsense3.2.2.jar"/>
+	<classpathentry kind="lib" path="libs/FlurryAgent.jar"/>
+	<classpathentry kind="lib" path="libs/bugsnag-android-2.0.4.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

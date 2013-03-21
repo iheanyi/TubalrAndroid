@@ -9,9 +9,7 @@ import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-//Make sure you import Apphance (see: Step 6)
-import com.apphance.android.Apphance;
+	
 import com.bugsense.trace.BugSenseHandler;
 
 
@@ -72,6 +70,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bugsnag.android.Bugsnag;
+import com.flurry.android.FlurryAgent;
 
 
 public class HomeActivity extends Activity implements OnItemClickListener, OnClickListener {
@@ -126,6 +125,8 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 
     public static final String APP_KEY = "9efd11ff27117b5000f4d69d9e6aa17a0332e53e";
     public static final String BUG_KEY = "b27d57ef";
+    public static final String FLURRY_KEY = "4GF6RX8PZ7DP53V795RF";
+
     
     //public static final BUG_KEY = ""
     @Override
@@ -134,9 +135,8 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         
        // Apphance.startNewSession(this, APP_KEY, Apphance.Mode.QA);
         BugSenseHandler.initAndStartSession(this, BUG_KEY);
-       
-
         Bugsnag.register(this, "1d479c585e3d333a05943f37bef208cf");
+        FlurryAgent.onStartSession(this, FLURRY_KEY);
 
         setContentView(R.layout.activity_home);
         
@@ -196,14 +196,6 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.activity_home, menu);
         return true;
-    }
-    
-    @Override
-    protected void onStop() {
-        super.onStop();
-        //controller.hide();
-        //mediaPlayer.stop();
-        //mediaPlayer.release();
     }
     
     private HttpClient createHttpsClient()
@@ -736,11 +728,8 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 			public void onClick(DialogInterface dialog, int which) {
 				// TODO Auto-generated method stub
 				
-				
-
-
 				s_artist = input.getEditableText().toString().trim();
-				BugSenseHandler.sendEvent("User searched for " + s_artist);
+				BugSenseHandler.sendEvent("User searched for Just: " + s_artist);
 
 				
 				if(s_artist.length() > 0) {
@@ -778,25 +767,34 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 			public void onClick(DialogInterface dialog, int which) {
 				// TODO Auto-generated method stub
 				
-				s_artist = input.getEditableText().toString();
-				s_type = "similar";
-				try {
-					s_url = ECHONEST_SIMILAR_URL + URLEncoder.encode(s_artist, "UTF-8") + ECHONEST_RESULT_URL + "40";
+				s_artist = input.getEditableText().toString().trim();
+				BugSenseHandler.sendEvent("User searched for Similar to " + s_artist);
+
 				
-				} catch (UnsupportedEncodingException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				if(s_artist.length() > 0) {
+					s_type = "similar";
+					try {
+						s_url = ECHONEST_SIMILAR_URL + URLEncoder.encode(s_artist, "UTF-8") + ECHONEST_RESULT_URL + "40";
+					
+					} catch (UnsupportedEncodingException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+					dialog.dismiss();
+					
+			        Intent i = new Intent(getApplicationContext(), PlaylistActivity.class);
+			        i.putExtra("url", s_url);
+			        i.putExtra("type", s_type);
+			        i.putExtra("artist", s_artist);
+			        
+			        startActivity(i);
 				}
 				
-				dialog.dismiss();
-				
-		        Intent i = new Intent(getBaseContext(), PlaylistActivity.class);
-		        i.putExtra("url", s_url);
-		        i.putExtra("type", s_type);
-		        i.putExtra("artist", s_artist);
-		        
-		        startActivity(i);
-				
+				else {
+					Toast.makeText(getApplicationContext(), "Invalid input into the search box!", Toast.LENGTH_SHORT).show();
+					dialog.dismiss();
+				}	
 			}
 		});
     
@@ -807,5 +805,13 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
 	}
     
     
-        
+    protected void onStart() {
+    	super.onStart();	
+        BugSenseHandler.initAndStartSession(this, BUG_KEY);
+        Bugsnag.register(this, "1d479c585e3d333a05943f37bef208cf");
+        FlurryAgent.onStartSession(this, FLURRY_KEY);
+    }
+
+    
+    
 }

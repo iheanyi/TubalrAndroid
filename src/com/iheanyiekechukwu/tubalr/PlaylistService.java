@@ -38,6 +38,7 @@ import android.util.Log;
 
 import com.bugsense.trace.BugSenseHandler;
 import com.bugsnag.android.Bugsnag;
+import com.flurry.android.FlurryAgent;
 
 public class PlaylistService extends IntentService {
 	
@@ -68,7 +69,7 @@ public class PlaylistService extends IntentService {
 	ResultReceiver receiver;
 	
     public static final String BUG_KEY = "b27d57ef";
-
+    public static final String FLURRY_KEY = "4GF6RX8PZ7DP53V795RF";
 
 	public PlaylistService() {
 		super("PlaylistService");
@@ -80,6 +81,7 @@ public class PlaylistService extends IntentService {
 		
 		BugSenseHandler.initAndStartSession(this, BUG_KEY);
         Bugsnag.register(this, "1d479c585e3d333a05943f37bef208cf");
+        FlurryAgent.onStartSession(this, FLURRY_KEY);
         
 		receiver = intent.getParcelableExtra("rec");
 		String type = intent.getExtras().getString("type");
@@ -152,9 +154,8 @@ public class PlaylistService extends IntentService {
 	public void processSimilarJSON(String result) {
 		// TODO Auto-generated method stub
 		
-		JSONObject object;
 		try {
-			
+			JSONObject object;
 			object = new JSONObject(result);
 			JSONObject response = object.getJSONObject("response");
 	        JSONObject status = response.getJSONObject("status");
@@ -196,7 +197,6 @@ public class PlaylistService extends IntentService {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-	
 	    		
 	    		
 	    	}
@@ -538,13 +538,17 @@ public class PlaylistService extends IntentService {
 			e.printStackTrace();
 		}
 	    
+	    
+		Log.d("SIM", "Similar task finished executing . . .");
+
 		Bundle b = new Bundle();
 		b.putSerializable("videos", videos);
 		b.putString("artist", artist);
 		receiver.send(STATUS_FINISHED, b);
+		this.stopSelf();
+
 		//b.putSerializable("videos", videos);
 
-		this.stopSelf();
 	            
 	}
 

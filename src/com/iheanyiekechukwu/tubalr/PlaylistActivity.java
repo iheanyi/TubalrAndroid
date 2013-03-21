@@ -30,6 +30,7 @@ import org.apache.http.util.EntityUtils;
 
 import com.bugsense.trace.BugSenseHandler;
 import com.bugsnag.android.Bugsnag;
+import com.flurry.android.FlurryAgent;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -107,6 +108,7 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
     
     private String artist;    
     
+    private Boolean paused = false;
     public MyResultReceiver mReceiver;
     
     private TextView currentTextView;
@@ -126,37 +128,9 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
     public static final String BUG_KEY = "b27d57ef";
     
 	private String s_url, s_artist, s_search, s_type = "";
+    public static final String FLURRY_KEY = "4GF6RX8PZ7DP53V795RF";
 
-    
-    /*private BroadcastReceiver playlistReceiver = new BroadcastReceiver() {
-    @Override
-    	public void onReceive(Context context, Intent intent) {
-    		Log.d("SHIT", "In Playlist Activity now!");
-    		
-    		if(videoList.size() > 0) {
-    			videoList = new ArrayList<VideoClass>();
-    		}
-    		videoList = (ArrayList<VideoClass>) intent.getSerializableExtra("videos");
-    		if(videoList.size() == 0) {
-    			Toast.makeText(context, "ERROR BUILDING PLAYLIST", Toast.LENGTH_LONG).show();
-    		}
-    		
-    		playlistView = (ListView) findViewById(R.id.playlistView);
-    		adapter = new PlaylistAdapter(context, R.layout.basicitem, videoList);
-    		playlistStringAdapter = new ArrayAdapter<VideoClass>(context, android.R.layout.simple_list_item_1, videoList);
-    		playlistView.setAdapter(adapter);
-    		
-    		playlistView.setOnItemClickListener(PlaylistActivity.this);
-
-    		
-    		adapter.notifyDataSetChanged();
-            String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(0).getId();
-            YoutubeVideoTask myTask = new YoutubeVideoTask();
-            myTask.execute(yt_video_url);
-    		pd.dismiss();
-    }
-};*/
-    
+   
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -166,12 +140,14 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 		
         BugSenseHandler.initAndStartSession(this, BUG_KEY);
         Bugsnag.register(this, "1d479c585e3d333a05943f37bef208cf");
+        FlurryAgent.onStartSession(this, FLURRY_KEY);
 
 		setupActionBar();
 		
 		
 		// IMPLEMENT VISUALIZER!
 		
+		videoList = new ArrayList<VideoClass>();
 		
 		intent = this.getIntent();
 		
@@ -198,15 +174,10 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 		
 		pd = ProgressDialog.show(this, "Building Playlist", "Finding Songs Relevant For Query: " + name);
 		pd.setCancelable(true);
-
-		vidV = (SurfaceView) findViewById(R.id.videoStream);
-		sh = vidV.getHolder();
-		
-		sh.setFixedSize(640, 320);
 		
 		//Collections.shuffle(videoList);
 		
-		sh.addCallback(this);
+		//sh.addCallback(this);
 		//ArrayList<VideoClass> tempList = (ArrayList<VideoClass>) i.getSerializableExtra("playlistExtra");
 		//videoList = (ArrayList<VideoClass>) i.getSerializableExtra("playlistExtra");
 		//Iterator<VideoClass> it = videoList.iterator();
@@ -234,6 +205,8 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 		pauseButton.setOnClickListener(this);
 		nextButton.setOnClickListener(this);
 		prevButton.setOnClickListener(this);
+		
+		
 		/*playlistView = (ListView) findViewById(R.id.playlistView);
 		adapter = new PlaylistAdapter(this, R.layout.basicitem, videoList);
 		playlistStringAdapter = new ArrayAdapter<VideoClass>(context, android.R.layout.simple_list_item_1, videoList);
@@ -265,12 +238,13 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 		getActionBar().setTitle("tubalr");
 		
 		// Adapter has been loaded properly . . . Sooo, yeah, play the first song.
-		
+		vidV = (SurfaceView) findViewById(R.id.videoStream);
+		sh = vidV.getHolder();
+		sh.setFixedSize(640, 320);					
+		sh.addCallback(this);
 
         
-        player.setOnCompletionListener(this);
-        player.setOnBufferingUpdateListener(this);
-        player.setOnPreparedListener(this);
+
         
         Log.d("LOC", "In Playlist Activity now");
        
@@ -319,7 +293,7 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 			return true;
 			
     	case R.id.menu_search: 		
-    		showSearchDialog();
+    		showSearchDialog("Please enter an artist's name");
     		return true;
     		
 		}
@@ -500,12 +474,29 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 				adapter.notifyDataSetChanged();
 
 		        Uri testUri = Uri.parse(testString);
-		        player.reset();
+
+		        if(player != null && paused) {
+		        	player.start();
+		        	paused = false;
+		        	return;
+		        } else if (player != null) {
+		        	releasePlayer();
+		        }
+		        
+		        //sh = vidV.getHolder();
+		        
 		        try {
+			        player = new MediaPlayer();
+			        player.setOnBufferingUpdateListener(this);
+		            player.setOnPreparedListener(this);
 		            player.setDataSource(this, testUri);
-		            player.setDisplay(sh);
+		            if(sh != null) {
+		            	player.setDisplay(sh);
+		            }
+		            //player.setDisplay(sh);
 		            player.setAudioStreamType(AudioManager.STREAM_MUSIC);
-		            player.prepareAsync(); // buffer it asynchronously
+		            player.prepareAsync(); // buffer it asynchronously		            
+		            player.setOnCompletionListener(this);
 		            
 		            //seek.setProgress(0);
 
@@ -583,11 +574,13 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 	public void onProgressChanged(SeekBar seekBar, int progress,
 			boolean fromUser) {
 		// TODO Auto-generated method stub
-		
-		if(fromUser) {
-			player.seekTo(progress);
-            //String time = String.format("%d:%d", TimeUnit.MILLISECONDS.toMinutes(player.getDuration()), TimeUnit.MILLISECONDS.toSeconds(player.getDuration()) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(player.getDuration())));
-			timeText.setText(getTimeString(seekBar.getProgress()));
+		int secondaryPosition = seekBar.getSecondaryProgress();
+		if(fromUser && player != null) {
+			if(progress > secondaryPosition) {
+				player.seekTo(progress);
+	            //String time = String.format("%d:%d", TimeUnit.MILLISECONDS.toMinutes(player.getDuration()), TimeUnit.MILLISECONDS.toSeconds(player.getDuration()) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(player.getDuration())));
+				timeText.setText(getTimeString(seekBar.getProgress()));
+			}
 		}
 		
 		else {
@@ -613,12 +606,13 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 	public void onCompletion(MediaPlayer mp) {
 		// TODO Auto-generated method stub
 		
-		Log.i("Completion Listener", "Song Complete");
-		mp.stop();
-		mp.reset();
-		
+		releasePlayer();
+		playNextTrack();
+	}
+	
+	private void playNextTrack() {
+		// TODO Auto-generated method stub
 		current++;
-		
 		// Loop around if you reach the end of the playlist
 		if(current == videoList.size()) {
 			current = 0;
@@ -631,9 +625,8 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
         YoutubeVideoTask myTask = new YoutubeVideoTask();
         myTask.execute(yt_video_url);
 		
-		
 	}
-	
+
 	private String getTimeString(long millis) {
 		StringBuffer buf = new StringBuffer();
 		
@@ -655,7 +648,7 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 	public void onBufferingUpdate(MediaPlayer mp, int percent) {
 		// TODO Auto-generated method stub
 		
-		if(mp.isPlaying() && seek != null) {
+		if(mp != null && seek != null && mp.isPlaying()) {
 			seek.setProgress(mp.getCurrentPosition());
 			timeText.setText(getTimeString(seek.getProgress()));
 		}
@@ -674,8 +667,12 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 	public void onPrepared(MediaPlayer mp) {
 		// TODO Auto-generated method stub
         seek.setMax(mp.getDuration());
-        maxText.setText(getTimeString(mp.getDuration()));	
+        maxText.setText(getTimeString(mp.getDuration()));
+        
+        
         player.start();
+        player.setOnCompletionListener(this);
+
         
         if(player.isPlaying()) {
         	playButton.setVisibility(View.GONE);
@@ -696,7 +693,7 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 		if(player == null) {
 			player = new MediaPlayer();
 		}
-		
+		//sh = holder;
 		player.setDisplay(holder);
 		
 	}
@@ -729,20 +726,24 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 	    		adapter.notifyDataSetChanged();
 
 	    		if(player != null) {
-	    			player.stop();
-	    			player.reset();
+	    			releasePlayer();
 	    		}
 	    		
 	    		
 	            
+	    		if(videoList.isEmpty() || videoList.size() == 0) {
+	    			showSearchDialog("No results found for last artist. Try another one.");
+	    		}
 	    		
 	    		// Play the first song
-	            String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(0).getId();
-	            currentTextView.setText(videoList.get(0).getTitle());
-	            YoutubeVideoTask myTask = new YoutubeVideoTask();
-	            myTask.execute(yt_video_url);
 	    		
-	    		
+	    		else {
+		            String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(0).getId();
+		            currentTextView.setText(videoList.get(0).getTitle());
+		            YoutubeVideoTask myTask = new YoutubeVideoTask();
+		            myTask.execute(yt_video_url);
+	    		}
+
 	            // do something interesting
 	            // hide progress
 	            break;
@@ -765,7 +766,18 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 		  super.onResume();
 		  IntentFilter intentFilter = new IntentFilter();
 		  intentFilter.addAction(PlaylistService.TRANSACTION_DONE);
+		  
+		  BugSenseHandler.initAndStartSession(this, BUG_KEY);
+	      Bugsnag.register(this, "1d479c585e3d333a05943f37bef208cf");
+	      FlurryAgent.onStartSession(this, FLURRY_KEY);
+	      
+
 		  //registerReceiver(playlistReceiver, intentFilter);
+	  }
+	  
+	  @Override
+	  public void onRestart() {
+		  super.onRestart();
 	  }
 	  
 	 @Override
@@ -781,46 +793,43 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 		switch (v.getId()) {
 		
 		case R.id.playButton:
-			if(!player.isPlaying()) {
+			if(player != null && paused) {
 				player.start();
+				paused = false;
 				pauseButton.setVisibility(View.VISIBLE);
 				playButton.setVisibility(View.GONE);
-				
 			}
 			break;
 			
 		case R.id.pauseButton:
-			if(player.isPlaying()) {
+			if(!paused && player != null) {
 				player.pause();
+				paused = true;
 				pauseButton.setVisibility(View.GONE);
 				playButton.setVisibility(View.VISIBLE);
 			}
 			break;
-		case R.id.nextButton:			
-			player.stop();
-			player.reset();
 			
-			current++;
-			
-			// Loop around if you reach the end of the playlist
-			if(current == videoList.size()) {
-				current = 0;
+		case R.id.nextButton:
+			if(player != null) {
+				//releasePlayer();
 			}
 			
-			playlistView.setSelection(current);
+			playNextTrack();
+	
+
 			
-			currentTextView.setText(videoList.get(current).getTitle());
-	        String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(current).getId();
-	        YoutubeVideoTask myTask = new YoutubeVideoTask();
-	        myTask.execute(yt_video_url);
-	        
+
+
+	    
 			break;
 			
 		case R.id.previousButton:
 
-			player.stop();
-			player.reset();
-			
+			if(player != null) {
+				player.stop();
+				player.reset();
+			}
 			
 			// Loop around if you reach the end of the playlist
 			if(current == 0) {
@@ -846,14 +855,14 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 		
 	}
 	
-	private void showSearchDialog() {
+	private void showSearchDialog(String message) {
 		// TODO Auto-generated method stub
 		
 		String url, artist, search, type = "";
 		AlertDialog.Builder alert = new AlertDialog.Builder(this);
 		
 		alert.setTitle("Build New Playlist . . . ");
-		alert.setMessage("Enter Artist's Name");
+		alert.setMessage(message);
 		final EditText input = new EditText(this);
 		//String artist = "";
 		alert.setView(input);
@@ -865,7 +874,8 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 				// TODO Auto-generated method stub
 				
 				s_artist = input.getEditableText().toString().trim();
-				
+				BugSenseHandler.sendEvent("User searched for just " + s_artist + " in playlist");
+
 				if(s_artist.length() > 0) {
 					s_type = "just";
 					try {
@@ -911,6 +921,8 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 				// TODO Auto-generated method stub
 				
 				s_artist = input.getEditableText().toString();
+				BugSenseHandler.sendEvent("User searched for similar to " + s_artist + " from Playlist");
+
 				if(s_artist.length() > 0) {
 					s_type = "similar";
 					try {
@@ -970,6 +982,26 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 		
 	}
 	
+	private void releasePlayer() {
+		if(player == null) {
+			return;
+		}
+		
+		if(player.isPlaying()) {
+			player.stop();
+		}
+		
+		player.release();
+		player = null;
+	}
+	
+    protected void onStart() {
+    	super.onStart();	
+        BugSenseHandler.initAndStartSession(this, BUG_KEY);
+        Bugsnag.register(this, "1d479c585e3d333a05943f37bef208cf");
+        FlurryAgent.onStartSession(this, FLURRY_KEY);
+    }
+    
 
 	
 }

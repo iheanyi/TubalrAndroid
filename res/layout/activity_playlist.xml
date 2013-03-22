@@ -99,7 +99,6 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="?android:selectableItemBackground"
                 android:padding="16dp"
                 android:src="@drawable/ic_action_playback_schuffle" />
 
@@ -115,7 +114,6 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="?android:selectableItemBackground"
                 android:padding="16dp"
                 android:src="@drawable/ic_action_playback_prev" />
 
@@ -124,7 +122,6 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="?android:selectableItemBackground"
                 android:padding="16dp"
                 android:src="@drawable/ic_action_playback_play" />
 
@@ -133,7 +130,6 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="?android:selectableItemBackground"
                 android:padding="16dp"
                 android:src="@drawable/ic_action_playback_pause"
                 android:visibility="gone" />
@@ -143,7 +139,6 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="?android:selectableItemBackground"
                 android:padding="16dp"
                 android:src="@drawable/ic_action_playback_next" />
 
@@ -159,7 +154,6 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="?android:selectableItemBackground"
                 android:padding="16dp"
                 android:src="@drawable/player_add" />
         </LinearLayout>

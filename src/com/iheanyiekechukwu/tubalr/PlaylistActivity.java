@@ -28,11 +28,15 @@ import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
+import com.actionbarsherlock.app.SherlockActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
+import com.actionbarsherlock.app.ActionBar;
 import com.bugsense.trace.BugSenseHandler;
 import com.bugsnag.android.Bugsnag;
 import com.flurry.android.FlurryAgent;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -56,8 +60,8 @@ import android.os.Handler;
 import android.support.v4.app.NavUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
+/*import android.view.Menu;
+import android.view.MenuItem;*/
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
@@ -75,7 +79,7 @@ import android.widget.Toast;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 
-public class PlaylistActivity extends Activity implements OnClickListener, MyResultReceiver.Receiver, OnItemClickListener, OnSeekBarChangeListener, OnCompletionListener, OnBufferingUpdateListener, OnPreparedListener, Callback, OnAudioFocusChangeListener {
+public class PlaylistActivity extends SherlockActivity implements OnClickListener, MyResultReceiver.Receiver, OnItemClickListener, OnSeekBarChangeListener, OnCompletionListener, OnBufferingUpdateListener, OnPreparedListener, Callback, OnAudioFocusChangeListener {
 
 	private ListView playlistView;
 	//private PlaylistAdapter playlistAdapter;
@@ -135,12 +139,13 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_playlist);
 		// Show the Up button in the action bar.
 		
         BugSenseHandler.initAndStartSession(this, BUG_KEY);
         Bugsnag.register(this, "1d479c585e3d333a05943f37bef208cf");
         FlurryAgent.onStartSession(this, FLURRY_KEY);
+
+		setContentView(R.layout.activity_playlist);
 
 		setupActionBar();
 		
@@ -222,20 +227,20 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 		
         Drawable d = getResources().getDrawable(R.drawable.navbar);
         
-        getActionBar().setBackgroundDrawable(d);
+        getSupportActionBar().setBackgroundDrawable(d);
         
-		getActionBar().setDisplayHomeAsUpEnabled(true);
-		getActionBar().setDisplayShowTitleEnabled(true);
-		getActionBar().setDisplayShowHomeEnabled(false);
+		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+		getSupportActionBar().setDisplayShowTitleEnabled(true);
+		getSupportActionBar().setDisplayShowHomeEnabled(false);
 		
-	    int actionBarTitleId = Resources.getSystem().getIdentifier("action_bar_title", "id", "android");
+	   /* int actionBarTitleId = Resources.getSystem().getIdentifier("action_bar_title", "id", "android");
 	    
 	    TextView actionBarTextView = (TextView) findViewById(actionBarTitleId);
-	    actionBarTextView.setTextColor(Color.WHITE);
+	    actionBarTextView.setTextColor(Color.WHITE);*/
 	    
 	    Typeface bookman = Typeface.createFromAsset(getAssets(), "fonts/bookos.ttf");
-	    actionBarTextView.setTypeface(bookman);
-		getActionBar().setTitle("tubalr");
+	    //actionBarTextView.setTypeface(bookman);
+		getSupportActionBar().setTitle("tubalr");
 		
 		// Adapter has been loaded properly . . . Sooo, yeah, play the first song.
 		vidV = (SurfaceView) findViewById(R.id.videoStream);
@@ -267,14 +272,16 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 	 */
 	private void setupActionBar() {
 
-		getActionBar().setDisplayHomeAsUpEnabled(true);
+		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
 	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.playlist, menu);
+		MenuInflater inflater = getSupportMenuInflater();
+		//getMenuInflater().inflate(R.menu.playlist, menu);
+		inflater.inflate(R.menu.playlist, menu);
 		return true;
 	}
 
@@ -694,7 +701,10 @@ public class PlaylistActivity extends Activity implements OnClickListener, MyRes
 			player = new MediaPlayer();
 		}
 		//sh = holder;
-		player.setDisplay(holder);
+		
+		if( holder != null) {
+			player.setDisplay(holder);
+		}
 		
 	}
 

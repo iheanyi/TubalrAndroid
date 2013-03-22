@@ -10,6 +10,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 	
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.SherlockActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
 import com.bugsense.trace.BugSenseHandler;
 
 
@@ -55,8 +60,8 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
+/*import android.view.Menu;
+import android.view.MenuItem;*/
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -73,7 +78,7 @@ import com.bugsnag.android.Bugsnag;
 import com.flurry.android.FlurryAgent;
 
 
-public class HomeActivity extends Activity implements OnItemClickListener, OnClickListener {
+public class HomeActivity extends SherlockActivity implements OnItemClickListener, OnClickListener {
     MediaController controller;
     
     private ArrayAdapter<String> menuAdapter;
@@ -153,22 +158,21 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
         videos = new ArrayList<VideoClass>();
         playlist = new ArrayList<VideoClass>();
         
-		getActionBar().setDisplayHomeAsUpEnabled(false);
-		getActionBar().setDisplayShowTitleEnabled(true);
-		getActionBar().setDisplayShowHomeEnabled(false);
+		getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+		getSupportActionBar().setDisplayShowTitleEnabled(true);
+		getSupportActionBar().setDisplayShowHomeEnabled(false);
 		
-	    int actionBarTitleId = Resources.getSystem().getIdentifier("action_bar_title", "id", "android");
-	    
+	   /* int actionBarTitleId = Resources.getSystem().getIdentifier("action_bar_title", "id", "android");
 	    TextView actionBarTextView = (TextView) findViewById(actionBarTitleId);
-	    actionBarTextView.setTextColor(Color.WHITE);
+	    actionBarTextView.setTextColor(Color.WHITE);*/
 	    
 	    Typeface bookman = Typeface.createFromAsset(getAssets(), "fonts/bookos.ttf");
-	    actionBarTextView.setTypeface(bookman);
-		getActionBar().setTitle("tubalr");
+	    //actionBarTextView.setTypeface(bookman);
+		getSupportActionBar().setTitle("tubalr");
         
         Drawable d = getResources().getDrawable(R.drawable.navbar);
         
-        getActionBar().setBackgroundDrawable(d);
+        getSupportActionBar().setBackgroundDrawable(d);
         
         //playlistStringArray = new ArrayList<String>();
        //playlistViewAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, playlistStringArray);
@@ -194,7 +198,8 @@ public class HomeActivity extends Activity implements OnItemClickListener, OnCli
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.activity_home, menu);
+        MenuInflater inflater = getSupportMenuInflater();
+    	inflater.inflate(R.menu.activity_home, menu);
         return true;
     }
     

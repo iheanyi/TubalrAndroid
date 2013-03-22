@@ -177,29 +177,31 @@ public class PlaylistService extends IntentService {
 	        }
 	        
 	        
-		  	JSONArray artists = response.getJSONArray("artists");
-	    	
-	    	for(int i = 0; i < artists.length(); ++i) {
-	    		JSONObject artist = artists.getJSONObject(i);
-	    		String name = artist.getString("name");
-	    		
-	    		String yt_url;
-				try {
-					// Fetching Youtube Songs
-						yt_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(name, "UTF-8") + YOUTUBE_END_URL;
-			    		//YoutubeTask myTask = new YoutubeTask();
-			    		//myTask.execute(yt_url);
-			        	String html = getPage(yt_url);
-			        	String type = "similar";
-			        	processYoutubeJSON(html, type);			
-	
-				} catch (UnsupportedEncodingException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-	    		
-	    		
-	    	}
+	        
+	        else {
+			  	JSONArray artists = response.getJSONArray("artists");
+		    	
+		    	for(int i = 0; i < artists.length(); ++i) {
+		    		JSONObject artist = artists.getJSONObject(i);
+		    		String name = artist.getString("name");
+		    		
+		    		String yt_url;
+					try {
+						// Fetching Youtube Songs
+							yt_url = YOUTUBE_SEARCH_URL + URLEncoder.encode(name, "UTF-8") + YOUTUBE_END_URL;
+				    		//YoutubeTask myTask = new YoutubeTask();
+				    		//myTask.execute(yt_url);
+				        	String html = getPage(yt_url);
+				        	String type = "similar";
+				        	processYoutubeJSON(html, type);			
+		
+					} catch (UnsupportedEncodingException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}    		
+		    	}	
+	        }
+
 	    	
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
@@ -208,7 +210,8 @@ public class PlaylistService extends IntentService {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+		Log.d("SIM", "Similar task finished executing . . .");
+
 		Bundle b = new Bundle();
 		b.putSerializable("videos", videos);
 		b.putString("artist", artist);
@@ -539,7 +542,7 @@ public class PlaylistService extends IntentService {
 		}
 	    
 	    
-		Log.d("SIM", "Similar task finished executing . . .");
+		Log.d("SIM", "Just task finished executing . . .");
 
 		Bundle b = new Bundle();
 		b.putSerializable("videos", videos);

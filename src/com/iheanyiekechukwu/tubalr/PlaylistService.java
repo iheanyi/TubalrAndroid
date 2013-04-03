@@ -28,7 +28,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.app.Dialog;
 import android.app.IntentService;
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -232,6 +231,13 @@ public class PlaylistService extends IntentService {
 	        for(int i = 0; i < entries.length(); ++i) {
 	            JSONObject entry = entries.getJSONObject(i);
 	            JSONObject idNode = entry.getJSONObject("id");
+		        JSONObject media = entry.getJSONObject("media$group");
+		        JSONArray mediaThumbnail = media.getJSONArray("media$thumbnail");
+		        JSONObject thumbnail = mediaThumbnail.getJSONObject(2);
+		        String thumbnailString = thumbnail.getString("url");
+		        
+		        Log.v("PlayListService", "Thumbnail URL: " + thumbnailString);
+
 	            String full_string = idNode.getString("$t");
 	            String[] splitArray = full_string.split(":");
 	            
@@ -239,7 +245,8 @@ public class PlaylistService extends IntentService {
 	            JSONObject titleNode = entry.getJSONObject("title");
 	            String videoTitle = titleNode.getString("$t");
 	            
-	            VideoClass newVideo = new VideoClass(id, videoTitle);
+	            
+	            VideoClass newVideo = new VideoClass(id, videoTitle, thumbnailString);
 	            
 	            //Toast.makeText(this.context, id, Toast.LENGTH_SHORT).show();
 	

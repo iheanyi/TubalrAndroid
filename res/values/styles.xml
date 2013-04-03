@@ -20,9 +20,5 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:padding">16dp</item>
     </style>
-   
-   <style name="Custom.ImageButton" parent="@android:style/Widget.ImageButton">
-       <item name="android:background">@drawable/abs__list_selector_holo_light</item>
-   </style>
     
 </resources>

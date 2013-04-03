@@ -1,4 +1,4 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,22 +10,36 @@
         android:id="@+id/videoLayout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp"
         android:layout_alignParentTop="true"
-        android:orientation="vertical" >
+        android:gravity="center"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:visibility="visible" >
+
+        <ImageView
+            android:id="@+id/videoImageView"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:scaleType="fitCenter"
+            android:src="@drawable/bg_noise" />
 
         <SurfaceView
             android:id="@+id/videoStream"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:padding="8dp" />
+            android:padding="8dp" 
+            android:visibility="gone"/>
 
         <TextView
             android:id="@+id/currentTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
+            android:layout_gravity="center"
+            android:gravity="center"
             android:padding="8dp"
             android:text=""
             android:textColor="#fff" />
@@ -57,7 +71,9 @@
             android:layout_height="wrap_content"
             android:layout_weight="3"
             android:gravity="center"
-            android:padding="16dp" />
+            android:paddingBottom="8dp"
+            android:paddingLeft="16dp"
+            android:paddingRight = "16dp" />
 
         <TextView
             android:id="@+id/maxText"
@@ -69,22 +85,20 @@
             android:padding="8dp"
             android:text=""
             android:textColor="@color/white" />
-
     </LinearLayout>
 
-    <View
+    <!-- <View
         android:id="@+id/seekDivider"
         android:layout_width="fill_parent"
         android:layout_height="1dp"
         android:layout_below="@+id/seekLayout"
-        android:background="#DADADA"
-        android:padding="8dp" />
+        android:background="#DADADA"/> -->
 
     <LinearLayout
         android:id="@+id/controlLayout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/seekDivider"
+        android:layout_below="@+id/seekLayout"
         android:background="#000" >
 
         <LinearLayout
@@ -99,21 +113,24 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:background="@drawable/selector_with_transparency"
                 android:padding="16dp"
                 android:src="@drawable/ic_action_playback_schuffle" />
 
-            <View
+            <!-- <View
                 android:id="@+id/shuffleDivider"
                 android:layout_width="1px"
                 android:layout_height="fill_parent"
                 android:background="#DADADA"
-                android:padding="8dp" />
+                android:padding="8dp" /> -->
 
             <ImageButton
                 android:id="@+id/previousButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:background="@drawable/selector_with_transparency"
+                
                 android:padding="16dp"
                 android:src="@drawable/ic_action_playback_prev" />
 
@@ -122,6 +139,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:background="@drawable/selector_with_transparency"
                 android:padding="16dp"
                 android:src="@drawable/ic_action_playback_play" />
 
@@ -129,6 +147,7 @@
                 android:id="@+id/pauseButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:background="@drawable/selector_with_transparency"
                 android:layout_weight="1"
                 android:padding="16dp"
                 android:src="@drawable/ic_action_playback_pause"
@@ -137,20 +156,22 @@
             <ImageButton
                 android:id="@+id/nextButton"
                 android:layout_width="0dp"
+                android:background="@drawable/selector_with_transparency"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:padding="16dp"
                 android:src="@drawable/ic_action_playback_next" />
 
-            <View
+           <!--  <View
                 android:id="@+id/addDivider"
                 android:layout_width="1px"
                 android:layout_height="fill_parent"
                 android:background="#DADADA"
-                android:padding="8dp" />
+                android:padding="8dp" /> -->
 
             <ImageButton
                 android:id="@+id/addButton"
+                android:background="@drawable/selector_with_transparency"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -162,9 +183,9 @@
     <View
         android:id="@+id/listDivider"
         android:layout_width="fill_parent"
-        android:layout_height="1dp"
+        android:layout_height="2dp"
         android:layout_below="@+id/controlLayout"
-        android:background="#DADADA"
+        android:background="#a6c"
         android:padding="8dp" />
 
     <ListView
@@ -173,12 +194,9 @@
         android:layout_height="fill_parent"
         android:layout_alignParentBottom="true"
         android:layout_below="@+id/listDivider"
-        android:layout_weight="1"
         android:background="@drawable/bg_noise"
         android:choiceMode="singleChoice"
-        android:divider="#fff"
-        android:dividerHeight="1px"
-        android:padding="8dp" >
+        android:dividerHeight="1dp">
     </ListView>
 
 </RelativeLayout>

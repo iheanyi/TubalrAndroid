@@ -3,23 +3,8 @@ package com.iheanyiekechukwu.tubalr;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-	
-import com.actionbarsherlock.app.ActionBar;
-import com.actionbarsherlock.app.SherlockActivity;
-import com.actionbarsherlock.view.Menu;
-import com.actionbarsherlock.view.MenuInflater;
-import com.actionbarsherlock.view.MenuItem;
-import com.bugsense.trace.BugSenseHandler;
-
-
-//Optionally import Apphance's logging functions (see: Step 7)
-//import com.apphance.android.Log;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -44,24 +29,18 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-/*import android.view.Menu;
-import android.view.MenuItem;*/
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -74,8 +53,17 @@ import android.widget.MediaController;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.actionbarsherlock.app.SherlockActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
+import com.bugsense.trace.BugSenseHandler;
 import com.bugsnag.android.Bugsnag;
 import com.flurry.android.FlurryAgent;
+//Optionally import Apphance's logging functions (see: Step 7)
+//import com.apphance.android.Log;
+/*import android.view.Menu;
+import android.view.MenuItem;*/
 
 
 public class HomeActivity extends SherlockActivity implements OnItemClickListener, OnClickListener {
@@ -107,6 +95,8 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
     
     private ArrayList<VideoClass> videos;
     private ArrayList<VideoClass> playlist;
+    
+    private TextView currentArtist;
     
     private ArrayAdapter<String> playlistViewAdapter;
     
@@ -161,6 +151,9 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 		getSupportActionBar().setDisplayHomeAsUpEnabled(false);
 		getSupportActionBar().setDisplayShowTitleEnabled(true);
 		getSupportActionBar().setDisplayShowHomeEnabled(false);
+		
+		currentArtist = (TextView) findViewById(R.id.artistNameText);
+		currentArtist.setOnClickListener(this);
 		
 	   /* int actionBarTitleId = Resources.getSystem().getIdentifier("action_bar_title", "id", "android");
 	    TextView actionBarTextView = (TextView) findViewById(actionBarTitleId);
@@ -344,7 +337,7 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
                 JSONObject titleNode = entry.getJSONObject("title");
                 String videoTitle = titleNode.getString("$t");
                 
-                VideoClass newVideo = new VideoClass(id, videoTitle);
+                VideoClass newVideo = new VideoClass(id, videoTitle, "swag");
                 
                 //Toast.makeText(this.context, id, Toast.LENGTH_SHORT).show();
 
@@ -635,6 +628,10 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 			} 
         	
           switch (v.getId()) {
+          
+          		case R.id.artistNameText:
+          			
+          			break;
                 case R.id.justButton:
                     try {
                     	//prog = ProgressDialog.show(this, "", "Finding songs only for: "  + search);

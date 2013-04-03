@@ -5,6 +5,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,23 +30,18 @@ import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
-import com.actionbarsherlock.app.SherlockActivity;
-import com.actionbarsherlock.view.Menu;
-import com.actionbarsherlock.view.MenuInflater;
-import com.actionbarsherlock.view.MenuItem;
-import com.actionbarsherlock.app.ActionBar;
-import com.bugsense.trace.BugSenseHandler;
-import com.bugsnag.android.Bugsnag;
-import com.flurry.android.FlurryAgent;
-
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Resources;
+import android.content.ServiceConnection;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
@@ -57,29 +54,44 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.support.v4.app.NavUtils;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
-/*import android.view.Menu;
-import android.view.MenuItem;*/
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SeekBar;
-import android.widget.Toast;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.actionbarsherlock.app.SherlockActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
+import com.bugsense.trace.BugSenseHandler;
+import com.bugsnag.android.Bugsnag;
+import com.flurry.android.FlurryAgent;
+
+import com.koushikdutta.urlimageviewhelper.UrlImageViewHelper;
 
 public class PlaylistActivity extends SherlockActivity implements OnClickListener, MyResultReceiver.Receiver, OnItemClickListener, OnSeekBarChangeListener, OnCompletionListener, OnBufferingUpdateListener, OnPreparedListener, Callback, OnAudioFocusChangeListener {
+
+	private UpdateCurrentTrackTask updateCurrentTrackTask;
+	
 
 	private ListView playlistView;
 	//private PlaylistAdapter playlistAdapter;
@@ -91,6 +103,9 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	private Context context;
 	private Intent intent;
 	
+	private Handler serviceHandler;
+	
+	private ImageView videoImageView;
 	private ArrayList<VideoClass> videoList;
 	
 	private int selectedPosition = 0;
@@ -101,7 +116,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
     
     private MediaPlayer player;
 
-    private SeekBar seek;
+    private SeekBar songSeek;
     
     private TextView timeText, maxText;
     
@@ -119,23 +134,43 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
     
 	private ProgressDialog pd;
 	
+	private BroadcastReceiver musicServiceBroadcastReceiver = new MusicServiceBroadcastReceiver();
+	private ServiceConnection serviceConnection = new MusicServiceConnection();
+	private MusicService musicService;
+	
 	private ImageButton playButton;
 	private ImageButton pauseButton;
 	private ImageButton nextButton;
 	private ImageButton prevButton;
+	private ImageButton shuffleButton;
 	
-    // EchoNest URLs
+	private Handler handler = new Handler();
+	private Timer waitForMusicServiceTimer = new Timer();
+	
+	public static final String TAG = "PlaylistActivity";
+	
+	private View listDivider;
+	
+    // Strings
     public static final String ECHONEST_SONG_URL = "http://developer.echonest.com/api/v4/artist/songs?api_key=OYJRQNQMCGIOZLFIW&name=";    
     public static final String ECHONEST_SIMILAR_URL = "http://developer.echonest.com/api/v4/artist/similar?api_key=OYJRQNQMCGIOZLFIW&name=";
     public static final String ECHONEST_RESULT_URL = "&format=json&callback=?&start=0&results=";
-
     public static final String BUG_KEY = "b27d57ef";
-    
-	private String s_url, s_artist, s_search, s_type = "";
+    private String s_url, s_artist, s_search, s_type = "";
     public static final String FLURRY_KEY = "4GF6RX8PZ7DP53V795RF";
-
+    
+    private Intent musicServiceIntent;
+    
+	public static final String INTENT_BASE_NAME = "com.iheanyiekechukwu.tubalr.MusicService";
+	public static final String NEXT_TRACK = INTENT_BASE_NAME + ".NEXT_TRACK";
+	public static final String PLAY_TRACK = INTENT_BASE_NAME + ".PLAY_TRACK";
+	public static final String PREV_TRACK = INTENT_BASE_NAME + ".PREV_TRACK";
+	public static final String PAUSE_TRACK = INTENT_BASE_NAME + ".PAUSE_TRACK";
+	public static final String PLAY_SELECT = INTENT_BASE_NAME + ".PLAY_SELECT";
+	public static final String NEW_SONGS = INTENT_BASE_NAME + ".NEW_SONGS";
    
 	
+	@SuppressWarnings("deprecation")
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -167,8 +202,14 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		IntentFilter intentFilter = new IntentFilter();
 		intentFilter.addAction(PlaylistService.TRANSACTION_DONE);
 		
+		serviceHandler = new Handler();
+		
 		
 		currentTextView = (TextView) findViewById(R.id.currentTextView);
+		
+		videoImageView = (ImageView) findViewById(R.id.videoImageView);
+		
+		Log.v(TAG, "onCreate() method junts");
 		//registerReceiver(playlistReceiver, intentFilter);
 		Intent i = new Intent(this, PlaylistService.class);
         i.putExtra("url", url);
@@ -180,21 +221,16 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		pd = ProgressDialog.show(this, "Building Playlist", "Finding Songs Relevant For Query: " + name);
 		pd.setCancelable(true);
 		
-		//Collections.shuffle(videoList);
+
 		
-		//sh.addCallback(this);
-		//ArrayList<VideoClass> tempList = (ArrayList<VideoClass>) i.getSerializableExtra("playlistExtra");
-		//videoList = (ArrayList<VideoClass>) i.getSerializableExtra("playlistExtra");
-		//Iterator<VideoClass> it = videoList.iterator();
-		
-		if(player != null) {
+		/*if(player != null) {
 			player.stop();
 		}
 		
 		
 		else {
 			player = new MediaPlayer();
-		}
+		}*/
 		
 		timeText = (TextView) findViewById(R.id.timeText);
 		maxText = (TextView) findViewById(R.id.maxText);
@@ -205,33 +241,42 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		pauseButton = (ImageButton) findViewById(R.id.pauseButton);
 		nextButton = (ImageButton) findViewById(R.id.nextButton);
 		prevButton = (ImageButton) findViewById(R.id.previousButton);
+		shuffleButton = (ImageButton) findViewById(R.id.shuffleButton);
 		
 		playButton.setOnClickListener(this);
 		pauseButton.setOnClickListener(this);
 		nextButton.setOnClickListener(this);
 		prevButton.setOnClickListener(this);
+		shuffleButton.setOnClickListener(this);
+		
+		listDivider = (View) findViewById(R.id.listDivider);
+		
+		//playButton.setBackgroundColor(Color.TRANSPARENT);
+		//pauseButton.setBackgroundColor(Color.TRANSPARENT);
 		
 		
-		/*playlistView = (ListView) findViewById(R.id.playlistView);
+		playlistView = (ListView) findViewById(R.id.playlistView);
 		adapter = new PlaylistAdapter(this, R.layout.basicitem, videoList);
 		playlistStringAdapter = new ArrayAdapter<VideoClass>(context, android.R.layout.simple_list_item_1, videoList);
 		playlistView.setAdapter(adapter);
 		
-		playlistView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);*/
+		playlistView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 		
-		seek = (SeekBar) findViewById(R.id.songSeekBar);
+		songSeek = (SeekBar) findViewById(R.id.songSeekBar);
 		
-		seek.setOnSeekBarChangeListener(this);
+		songSeek.setOnSeekBarChangeListener(new TimelineChangeListener());
 
 		//playlistView.setOnItemClickListener(this);
 		
-        Drawable d = getResources().getDrawable(R.drawable.navbar);
+		Drawable d = getResources().getDrawable(R.drawable.navbar);
         
         getSupportActionBar().setBackgroundDrawable(d);
         
 		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 		getSupportActionBar().setDisplayShowTitleEnabled(true);
 		getSupportActionBar().setDisplayShowHomeEnabled(false);
+		listDivider.setBackgroundDrawable(d);
+
 		
 	   /* int actionBarTitleId = Resources.getSystem().getIdentifier("action_bar_title", "id", "android");
 	    
@@ -242,11 +287,25 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	    //actionBarTextView.setTypeface(bookman);
 		getSupportActionBar().setTitle("tubalr");
 		
+		//Display display = getWindowManager().getDefaultDisplay();
+		Point size = new Point();
+		WindowManager w = getWindowManager();
+
+		DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+		int width = metrics.widthPixels;
+		int height = metrics.heightPixels;
+		
+		int newHeight = (int) (height * 0.25);
+		
+		videoImageView.setMaxHeight(newHeight);
 		// Adapter has been loaded properly . . . Sooo, yeah, play the first song.
-		vidV = (SurfaceView) findViewById(R.id.videoStream);
+		
+		
+		
+		/*vidV = (SurfaceView) findViewById(R.id.videoStream);
 		sh = vidV.getHolder();
-		sh.setFixedSize(640, 320);					
-		sh.addCallback(this);
+		sh.setFixedSize(width, newHeight);					
+		sh.addCallback(this);*/ 
 
         
 
@@ -266,6 +325,44 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		}*/		
 
 	}
+	
+	Runnable mStatusChecker = new  Runnable() {
+		
+		@Override
+		public void run() {
+			
+			int currentPosition = 0;
+			int total = musicService.maxDuration();
+			
+		
+			while(musicService.isPlaying()) {
+				
+				Log.v(TAG, "Music Streaming, and I'm trying to update . .. ");
+				
+				try {
+					Thread.sleep(1000);
+					total = musicService.maxDuration();
+					currentPosition = musicService.elapsed();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return;
+				} catch (Exception e) {
+					return;
+				}
+				songSeek.setProgress(currentPosition);
+				timeText.setText(getTimeString(currentPosition));
+				maxText.setText(getTimeString(total));
+				//VideoClass video = musicService.getCurrentVideo();
+				
+				
+				//updatePlayPanel(video);
+				
+				//serviceHandler.postDelayed(mStatusChecker, musicService.maxDuration());
+			}
+
+		}
+	};
 
 	/**
 	 * Set up the {@link android.app.ActionBar}.
@@ -304,6 +401,9 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
     		return true;
     		
 		}
+		
+	
+			
 		return super.onOptionsItemSelected(item);
 	}
 
@@ -314,16 +414,28 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		selectedPosition = pos;
 		current = pos;
 		
-		playlistView.setSelection(pos);
-		currentTextView.setText(videoList.get(pos).getTitle());
+		
+		
+		Log.v(TAG, "Clicking on number " + Integer.toString(current));
+
+		Intent selectIntent = new Intent(PLAY_SELECT);
+		intent.putExtra("position", selectedPosition);
+		this.sendBroadcast(selectIntent);
+		
+		
+		
+		//playlistView.setSelection(pos);
+		//currentTextView.setText(videoList.get(pos).getTitle());
 		
 		//VideoClass selectedVideo = videoList.get(pos);
 		
 		//String id = selectedVideo.getId();
 		
+		
+		/*
         String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(pos).getId();
         YoutubeVideoTask myTask = new YoutubeVideoTask();
-        myTask.execute(yt_video_url);
+        myTask.execute(yt_video_url);*/
 		
 		
 		
@@ -491,15 +603,14 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		        }
 		        
 		        //sh = vidV.getHolder();
-		        
 		        try {
 			        player = new MediaPlayer();
 			        player.setOnBufferingUpdateListener(this);
 		            player.setOnPreparedListener(this);
 		            player.setDataSource(this, testUri);
-		            if(sh != null) {
+		           /* if(sh != null) {
 		            	player.setDisplay(sh);
-		            }
+		            }*/
 		            //player.setDisplay(sh);
 		            player.setAudioStreamType(AudioManager.STREAM_MUSIC);
 		            player.prepareAsync(); // buffer it asynchronously		            
@@ -655,9 +766,9 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	public void onBufferingUpdate(MediaPlayer mp, int percent) {
 		// TODO Auto-generated method stub
 		
-		if(mp != null && seek != null && mp.isPlaying()) {
-			seek.setProgress(mp.getCurrentPosition());
-			timeText.setText(getTimeString(seek.getProgress()));
+		if(mp != null && songSeek != null && mp.isPlaying()) {
+			songSeek.setProgress(mp.getCurrentPosition());
+			timeText.setText(getTimeString(songSeek.getProgress()));
 		}
 		
 	}
@@ -673,7 +784,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	@Override
 	public void onPrepared(MediaPlayer mp) {
 		// TODO Auto-generated method stub
-        seek.setMax(mp.getDuration());
+        /*songSeek.setMax(mp.getDuration());
         maxText.setText(getTimeString(mp.getDuration()));
         
         
@@ -684,8 +795,130 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
         if(player.isPlaying()) {
         	playButton.setVisibility(View.GONE);
         	pauseButton.setVisibility(View.VISIBLE);
+        }*/
+
+	}
+	
+	private void updatePlayPanel(final VideoClass video) {
+		Log.v(TAG, "PlaylistActivity(): Updating the Play Panel");
+		runOnUiThread(new Runnable() {
+			
+			public void run() {
+				
+				Log.v(TAG, "PlaylistActivity(): Updating the Play Panel");
+				int elapsedMillis = musicService.elapsed();
+
+				if(musicService.isPlaying()) {
+					songSeek.setProgress(elapsedMillis);
+					timeText.setText(getTimeString(elapsedMillis));
+				}
+
+				
+				
+				
+				Log.v(TAG, "PlaylistActivity: " + Integer.toString(elapsedMillis) + Integer.toString(musicService.maxDuration()));
+				currentTextView.setText(video.getTitle());
+				
+				Log.v(TAG, "The fucking image URL is: " + video.getImageURL());
+				UrlImageViewHelper.setUrlDrawable(videoImageView, video.getImageURL(), R.drawable.tubalr_icon);
+				
+				maxText.setText(getTimeString(musicService.maxDuration()));
+				songSeek.setMax(musicService.maxDuration());
+				//songSeek.setProgress(elapsedMillis);
+				
+				/*while(musicService.isPlaying()) {
+					elapsedMillis = musicService.elapsed();
+					songSeek.setProgress(elapsedMillis);
+					timeText.setText(getTimeString(songSeek.getProgress()));
+				}*/
+				//sh = vidV.getHolder();
+				//musicService.setDisplay(sh);
+			}
+		});
+	}
+	
+	private void updatePlayPauseButtonState() {
+		Log.v(TAG, "updatePlayPauseButtonState()");
+		
+		//Log.v(TAG, Boolean.toString(musicService.isPlaying()));
+		
+		if(musicService.isPlaying()) {
+			pauseButton.setVisibility(View.VISIBLE);
+			playButton.setVisibility(View.GONE);
+		} else {
+			pauseButton.setVisibility(View.GONE);
+			playButton.setVisibility(View.VISIBLE);
+		}
+		
+	}
+	
+	private class UpdateCurrentTrackTask extends AsyncTask<Void, VideoClass, Void> {
+		public boolean stopped = false;
+		public boolean paused = false;
+		
+		protected void onPreExecute() {
+			super.onPreExecute();
+			
+			VideoClass currentVideo = musicService.getCurrentVideo();
+					
+			if(currentVideo != null) {
+				updatePlayPanel(currentVideo);
+			}
+		}
+		@Override
+		protected Void doInBackground(Void... params) {
+			// TODO Auto-generated method stub
+							
+				//updatePlayPauseButtonState();
+				if(!paused) {
+					
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					//Log.v(TAG, "PlaylistActivity: Updating current Track Task junts");
+					VideoClass currentVideo = musicService.getCurrentVideo();
+					
+					Log.v(TAG, currentVideo.getTitle());
+					//updatePlayPauseButtonState();
+					
+					if(currentVideo != null) {
+						//publishProgress(currentVideo);
+						//updatePlayPanel(currentVideo);
+					}
+					//publishProgress(currentVideo);
+				}
+				
+	
+		return null;
+		
+
+		}
+		
+		protected void OnProgressUpdate(VideoClass... video) {
+			super.onProgressUpdate(video);
+			/*if(stopped || paused) {
+				return;
+			}*/
+			
+			Log.d(TAG, "PlaylistActivity: onProgressUpdate");
+			updatePlayPanel(video[0]);
+		}
+		
+        public void stop() {
+            stopped = true;
+        }
+        
+        public void pause() {
+            this.paused = true;
         }
 
+        public void unPause() {
+            this.paused = false;
+        }
+		
 	}
 
 	@Override
@@ -734,25 +967,42 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	    		playlistView.setOnItemClickListener(this);
 	    		pd.dismiss();
 	    		adapter.notifyDataSetChanged();
-
-	    		if(player != null) {
-	    			releasePlayer();
+	    		
+	    		//serviceConnection = new MusicServiceConnection();
+	    		
+	    		if(musicServiceIntent == null) {
+	    			MusicService.setMainActivity(PlaylistActivity.this);
+	    			musicServiceIntent = new Intent(this, MusicService.class);
+		    		musicServiceIntent.putExtra("videos", videoList);
+		    		musicServiceIntent.putExtra("artist", artist);
+		    		bindService(musicServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 	    		}
 	    		
-	    		
-	            
-	    		if(videoList.isEmpty() || videoList.size() == 0) {
-	    			showSearchDialog("No results found for last artist. Try another one.");
+			  
+	    		else if(musicServiceIntent != null) {
+	    			
+	    			Intent newSongIntent = new Intent(NEW_SONGS);
+	    			newSongIntent.putExtra("videos", videoList);
+	    			this.sendBroadcast(newSongIntent);
+	    			
+	    			/*unbindService(serviceConnection);
+	    			Log.v(TAG, "Recreating intent?");
+	    			MusicService.setMainActivity(PlaylistActivity.this);
+	    			musicServiceIntent = new Intent(this, MusicService.class);
+		    		musicServiceIntent.putExtra("videos", videoList);
+		    		musicServiceIntent.putExtra("artist", artist);
+		    		bindService(musicServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);*/
 	    		}
 	    		
-	    		// Play the first song
+		    	musicServiceBroadcastReceiver = new MusicServiceBroadcastReceiver();
+		    	IntentFilter filter = new IntentFilter(MusicService.UPDATE_PLAYLIST);
+		    	filter.addAction(MusicService.NEXT_TRACK);
+		    	filter.addAction(MusicService.PREV_TRACK);
+		    	filter.addAction(MusicService.PAUSE_TRACK);
+		    	filter.addAction(MusicService.PLAY_SELECT);
+		    	filter.addAction(MusicService.NEW_SONGS);
+		    	registerReceiver(musicServiceBroadcastReceiver, filter);	
 	    		
-	    		else {
-		            String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(0).getId();
-		            currentTextView.setText(videoList.get(0).getTitle());
-		            YoutubeVideoTask myTask = new YoutubeVideoTask();
-		            myTask.execute(yt_video_url);
-	    		}
 
 	            // do something interesting
 	            // hide progress
@@ -762,6 +1012,14 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	}
 	  @Override
 	  public void onPause() {
+	    //super.onPause();
+	    
+		  if(musicServiceBroadcastReceiver != null) {
+			  unregisterReceiver(musicServiceBroadcastReceiver);
+			  musicServiceBroadcastReceiver = null;
+		  }
+	    
+	    
 	    super.onPause();
 	    if(mReceiver != null) {
 			mReceiver.setReceiver(null);
@@ -772,8 +1030,32 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	  }
 	  
 	  @Override
+	  public void onStop() {
+		  super.onStop();
+
+		 // unbindService(serviceConnection);
+	  }
+	  
+	  @Override
 	  public void onResume() {
 		  super.onResume();
+		  
+		  //musicServiceIntent = new Intent(this, MusicService.class);
+		  //bindService(musicServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+		  
+		  musicServiceBroadcastReceiver = new MusicServiceBroadcastReceiver();
+  		  IntentFilter filter = new IntentFilter(MusicService.UPDATE_PLAYLIST);
+  		  filter.addAction(MusicService.NEXT_TRACK);
+  		  filter.addAction(MusicService.PREV_TRACK);
+  		  filter.addAction(MusicService.PLAY_SELECT);
+  		  filter.addAction(MusicService.PAUSE_TRACK);
+  		  filter.addAction(MusicService.NEW_SONGS);
+  		  registerReceiver(musicServiceBroadcastReceiver, filter);
+  		  
+  		  refreshScreen();
+  		//registerReceiver(musicServiceBroadcastReceiver, filter);
+		  
+		  //refreshScreen();
 		  IntentFilter intentFilter = new IntentFilter();
 		  intentFilter.addAction(PlaylistService.TRANSACTION_DONE);
 		  
@@ -804,19 +1086,29 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		
 		case R.id.playButton:
 			if(player != null && paused) {
-				player.start();
-				paused = false;
+				/*player.start();
 				pauseButton.setVisibility(View.VISIBLE);
-				playButton.setVisibility(View.GONE);
+				playButton.setVisibility(View.GONE);*/
+				
+				paused = false;
+				Intent playTrackIntent = new Intent(PLAY_TRACK);
+				this.sendBroadcast(playTrackIntent);
+				
+				updatePlayPauseButtonState();
 			}
 			break;
 			
 		case R.id.pauseButton:
 			if(!paused && player != null) {
-				player.pause();
+				
+				Intent pauseTrackIntent = new Intent(PAUSE_TRACK);
+				//this.sendBroadcast(pauseTrackIntent);
+				updatePlayPauseButtonState();
+				
+				//player.pause();
 				paused = true;
-				pauseButton.setVisibility(View.GONE);
-				playButton.setVisibility(View.VISIBLE);
+				//pauseButton.setVisibility(View.GONE);
+				//playButton.setVisibility(View.VISIBLE);
 			}
 			break;
 			
@@ -825,38 +1117,18 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 				//releasePlayer();
 			}
 			
-			playNextTrack();
-	
-
+			Intent nextTrackIntent = new Intent(NEXT_TRACK);
+			this.sendBroadcast(nextTrackIntent);
 			
-
-
+			//playNextTrack();
 	    
 			break;
 			
 		case R.id.previousButton:
 
-			if(player != null) {
-				player.stop();
-				player.reset();
-			}
+			Intent prevTrackIntent = new Intent(PREV_TRACK);
+			this.sendBroadcast(prevTrackIntent);
 			
-			// Loop around if you reach the end of the playlist
-			if(current == 0) {
-				current = 0;
-			}
-			
-			else {
-				current--;
-			}
-			
-			playlistView.setSelection(current);
-			
-			currentTextView.setText(videoList.get(current).getTitle());
-	        String yt_url = YOUTUBE_VIDEO_URL + videoList.get(current).getId();
-	        YoutubeVideoTask newTask = new YoutubeVideoTask();
-	        newTask.execute(yt_url);
-	        
 			break;
 			
 		default: 
@@ -1005,12 +1277,151 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		player = null;
 	}
 	
+	public void updatePlayQueue() {
+		updatePlayPauseButtonState();
+		
+		if(musicService.getCurrentVideo() != null) {
+			//updatePlayPanel(musicService.getCurrentVideo());
+		}
+		//mStatusChecker.run();
+		if(updateCurrentTrackTask == null) {
+			Log.v(TAG, "PlaylistActivity: currently in updateCurrentTrackTask pre-execute");
+			
+			//updateCurrentTrackTask = new UpdateCurrentTrackTask();
+			//updateCurrentTrackTask.execute();
+		} else {
+			//updateCurrentTrackTask.stop();
+			//updateCurrentTrackTask = null;
+			Log.e("PlaylistActivity", "updateCurrentTrackTask is not null");
+		}
+	}
+	
     protected void onStart() {
     	super.onStart();	
         BugSenseHandler.initAndStartSession(this, BUG_KEY);
         Bugsnag.register(this, "1d479c585e3d333a05943f37bef208cf");
         FlurryAgent.onStartSession(this, FLURRY_KEY);
     }
+    
+    private class MusicServiceBroadcastReceiver extends BroadcastReceiver {
+    	
+    	public void onReceive(Context context, Intent intent) {
+    		Log.d("PlaylistActivity", "MusicServiceBroadcastReceive.onReceive action =  " + intent.getAction());
+    		if(MusicService.UPDATE_PLAYLIST.equals(intent.getAction())) {
+    			Log.d(TAG, "updatePlaylist is fucking called!");
+    			updatePlayQueue();
+    			
+    			//updatePlayPanel(musicService.getCurrentVideo());
+    		}
+    	}
+    }
+    
+    private final class MusicServiceConnection implements ServiceConnection {
+
+		@Override
+		public void onServiceConnected(ComponentName className, IBinder baBinder) {
+			// TODO Auto-generated method stub
+			Log.d("PlaylistActivity", "MusicServiceConnection: Service connected");
+			musicService = ((MusicService.MusicServiceBinder) baBinder).getService();
+			MusicService.setMainActivity(PlaylistActivity.this);
+    		musicServiceIntent.putExtra("videos", videoList);
+			startService(musicServiceIntent);
+			
+			musicService.playCurrentSong();
+			
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName className) {
+			// TODO Auto-generated method stub
+			Log.d(TAG, "ServiceConnection: Service disconnected.");
+			
+			musicService = null;
+			//startService(musicServiceIntent);
+		}
+    	
+    }
+    
+    private void refreshScreen() {
+    	if(musicService == null) {
+    		//Log.v(TAG, "musicService is ")
+    		//updateScreenAsync();
+    	} else {
+    		//updatePlayQueue();
+    	}
+    }
+
+	private void updateScreenAsync() {
+		// TODO Auto-generated method stub
+		waitForMusicServiceTimer.scheduleAtFixedRate(new TimerTask() {
+			public void run() {
+				Log.d(TAG, "updateScreenAsync running timer");
+				if(musicService != null) {
+					waitForMusicServiceTimer.cancel();
+					handler.post(new Runnable() {
+						public void run() {
+							updatePlayQueue();
+						}
+					});
+				}
+			}
+		}, 10, 250);
+	}
+	
+	private class TimelineChangeListener implements OnSeekBarChangeListener {
+		private Timer delayedSeekTimer;
+
+		@Override
+		public void onProgressChanged(SeekBar seekBar, int progress,
+				boolean fromUser) {
+			// TODO Auto-generated method stub
+			
+			if(fromUser) {
+				Log.d(TAG, "TimelineChangeListener progress received from user: " + progress);
+				
+				scheduleSeek(progress);
+				
+				return;
+			}
+			
+		}
+		
+		private void scheduleSeek(final int progress) {
+			if (delayedSeekTimer != null) {
+				delayedSeekTimer.cancel();
+			}
+			
+			delayedSeekTimer = new Timer();
+			delayedSeekTimer.schedule(new TimerTask() {
+
+				@Override
+				public void run() {
+					// TODO Auto-generated method stub
+					Log.d(TAG, "Delayed Seek Timer run!");
+					musicService.seek(progress);
+					//updatePlayPanel(musicService.getCurrentVideo());
+				}
+				
+				
+			}, 170);
+		}
+
+		@Override
+		public void onStartTrackingTouch(SeekBar seekBar) {
+			// TODO Auto-generated method stub
+//			updateCurrentTrackTask.pause();
+		}
+
+		@Override
+		public void onStopTrackingTouch(SeekBar seekBar) {
+			// TODO Auto-generated method stub
+			Log.d(TAG, "Started tracking touch in Timeline Change!");
+			//updateCurrentTrackTask.unPause();
+			
+		}
+		
+		
+	}
     
 
 	

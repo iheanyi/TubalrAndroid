@@ -961,9 +961,12 @@ containing a value of this type.
         public static final int player_play=0x7f020083;
         public static final int player_shuffle=0x7f020084;
         public static final int plus=0x7f020085;
-        public static final int search=0x7f020086;
-        public static final int settings=0x7f020087;
-        public static final int tubalr_icon=0x7f020088;
+        public static final int pressed=0x7f020086;
+        public static final int search=0x7f020087;
+        public static final int selector_with_transparency=0x7f020088;
+        public static final int settings=0x7f020089;
+        public static final int transparent=0x7f02008a;
+        public static final int tubalr_icon=0x7f02008b;
     }
     public static final class id {
         public static final int abs__action_bar=0x7f050022;
@@ -1006,11 +1009,10 @@ containing a value of this type.
         public static final int abs__title=0x7f05001b;
         public static final int abs__titleDivider=0x7f05001c;
         public static final int abs__up=0x7f05000b;
-        public static final int addButton=0x7f050053;
-        public static final int addDivider=0x7f050052;
+        public static final int addButton=0x7f050051;
         public static final int artistNameText=0x7f050039;
         public static final int controlLayout=0x7f050038;
-        public static final int currentTextView=0x7f050046;
+        public static final int currentTextView=0x7f050047;
         public static final int disableHome=0x7f050009;
         public static final int edit_query=0x7f050027;
         public static final int email=0x7f050040;
@@ -1020,42 +1022,41 @@ containing a value of this type.
         public static final int imageButton2=0x7f05003b;
         public static final int imageButton3=0x7f05003c;
         public static final int justButton=0x7f050035;
-        public static final int listDivider=0x7f050054;
+        public static final int listDivider=0x7f050052;
         public static final int listMode=0x7f050002;
         public static final int login=0x7f050042;
         public static final int login_form=0x7f05003f;
         public static final int login_status=0x7f05003d;
         public static final int login_status_message=0x7f05003e;
-        public static final int maxText=0x7f05004a;
-        public static final int menu_add=0x7f050059;
-        public static final int menu_forgot_password=0x7f05005a;
-        public static final int menu_search=0x7f050058;
-        public static final int menu_settings=0x7f050057;
-        public static final int nextButton=0x7f050051;
+        public static final int maxText=0x7f05004b;
+        public static final int menu_add=0x7f050057;
+        public static final int menu_forgot_password=0x7f050058;
+        public static final int menu_search=0x7f050056;
+        public static final int menu_settings=0x7f050055;
+        public static final int nextButton=0x7f050050;
         public static final int normal=0x7f050001;
         public static final int password=0x7f050041;
-        public static final int pauseButton=0x7f050050;
-        public static final int playButton=0x7f05004f;
-        public static final int playlistView=0x7f050055;
-        public static final int previousButton=0x7f05004e;
+        public static final int pauseButton=0x7f05004f;
+        public static final int playButton=0x7f05004e;
+        public static final int playlistView=0x7f050053;
+        public static final int previousButton=0x7f05004d;
         public static final int searchControls=0x7f050033;
-        public static final int seekDivider=0x7f05004b;
-        public static final int seekLayout=0x7f050047;
+        public static final int seekLayout=0x7f050048;
         public static final int showCustom=0x7f050008;
         public static final int showHome=0x7f050005;
         public static final int showTitle=0x7f050007;
         public static final int shuffleButton=0x7f05004c;
-        public static final int shuffleDivider=0x7f05004d;
         public static final int sign_in_button=0x7f050043;
         public static final int similarButton=0x7f050036;
         public static final int songSearchText=0x7f050034;
-        public static final int songSeekBar=0x7f050049;
+        public static final int songSeekBar=0x7f05004a;
         public static final int tabMode=0x7f050003;
-        public static final int text1=0x7f050056;
-        public static final int timeText=0x7f050048;
+        public static final int text1=0x7f050054;
+        public static final int timeText=0x7f050049;
         public static final int useLogo=0x7f050004;
+        public static final int videoImageView=0x7f050045;
         public static final int videoLayout=0x7f050044;
-        public static final int videoStream=0x7f050045;
+        public static final int videoStream=0x7f050046;
         public static final int wrap_content=0x7f050000;
     }
     public static final class integer {
@@ -1089,11 +1090,9 @@ containing a value of this type.
         public static final int activity_login=0x7f030018;
         public static final int activity_playlist=0x7f030019;
         public static final int basicitem=0x7f03001a;
-        public static final int fragment_playlist_search_dialog=0x7f03001b;
-        public static final int fragment_playlist_select=0x7f03001c;
-        public static final int header=0x7f03001d;
-        public static final int sherlock_spinner_dropdown_item=0x7f03001e;
-        public static final int sherlock_spinner_item=0x7f03001f;
+        public static final int header=0x7f03001b;
+        public static final int sherlock_spinner_dropdown_item=0x7f03001c;
+        public static final int sherlock_spinner_item=0x7f03001d;
     }
     public static final class menu {
         public static final int activity_home=0x7f0d0000;
@@ -1200,19 +1199,19 @@ containing a value of this type.
         res/values-v11/styles.xml on API 14+ devices.
     
          */
-        public static final int ActionBar=0x7f0b005d;
+        public static final int ActionBar=0x7f0b005c;
         /** 
         Base application theme, dependent on API level. This theme is replaced
         by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
     
          */
         public static final int ActionBarText=0x7f0b0059;
-        public static final int AppBaseTheme=0x7f0b005e;
+        public static final int AppBaseTheme=0x7f0b005d;
         /**  Application theme. 
  All customizations that are NOT specific to a particular API-level can go here. 
          */
         public static final int AppTheme=0x7f0b005a;
-        public static final int Custom_ImageButton=0x7f0b005c;
+        public static final int Custom_ImageButton=0x7f0b005e;
         public static final int DialogWindowTitle_Sherlock=0x7f0b0036;
         public static final int DialogWindowTitle_Sherlock_Light=0x7f0b0037;
         public static final int LoginFormContainer=0x7f0b005b;

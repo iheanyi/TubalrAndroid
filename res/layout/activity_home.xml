@@ -5,66 +5,77 @@
     android:orientation="vertical"
     tools:context=".HomeActivity" >
 
-    <LinearLayout
-        android:id="@+id/searchControls"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
+    <TabHost
+        android:id="@android:id/tabhost"
         android:layout_alignParentTop="true"
-        android:visibility="gone" >
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
 
-        <EditText
-            android:id="@+id/songSearchText"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:inputType="textNoSuggestions"
-            android:queryHint="@string/search_name">
-        </EditText>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical" >
 
-        <Button
-            android:id="@+id/justButton"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Just" />
-         <Button
-            android:id="@+id/similarButton"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Similar" />
-    </LinearLayout>
+            <TabWidget
+                android:id="@android:id/tabs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+            </TabWidget>
+
+            <FrameLayout
+                android:id="@android:id/tabcontent"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" >
+
+                <LinearLayout
+                    android:id="@+id/tab1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" >
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/tab2"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" >
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/tab3"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" >
+                </LinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+    </TabHost>
 
     <ListView
         android:id="@+id/homeFixedListView"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-		android:layout_alignParentTop="true"
         android:layout_above="@+id/controlLayout"
-        android:textColor="@color/white"
+        android:layout_below="@android:id/tabhost"
         android:layout_weight="1"
-        >
-
+        android:textColor="@color/white" >
     </ListView>
-    
+
     <LinearLayout
         android:id="@+id/controlLayout"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" 
-        android:layout_alignParentBottom = "true"
-        android:background="#000">
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="#000" >
 
         <TextView
             android:id="@+id/artistNameText"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:layout_weight="1"
             android:clickable="true"
             android:onClick="onClick"
-            android:textColor="#fff"
-            android:layout_weight="1"
-            android:paddingLeft = "16dp"
-            android:text="Artist Name Here" />
+            android:paddingLeft="16dp"
+            android:text="Artist Name Here"
+            android:textColor="#fff" />
 
         <LinearLayout
             android:layout_width="fill_parent"
@@ -96,9 +107,7 @@
                 android:background="@null"
                 android:padding="8dp"
                 android:src="@drawable/player_last" />
-
         </LinearLayout>
-
     </LinearLayout>
 
 </RelativeLayout>

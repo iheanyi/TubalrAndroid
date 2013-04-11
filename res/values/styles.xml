@@ -13,6 +13,7 @@
     <!-- Application theme. -->
     <style name="AppTheme" parent="@style/Theme.Sherlock">
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
+  
     </style>
 
     <style name="LoginFormContainer">

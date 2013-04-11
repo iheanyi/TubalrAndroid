@@ -31,15 +31,18 @@ import org.json.JSONObject;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.res.Resources;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -89,11 +92,11 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
     private static final String YOUTUBE_END_URL = "&orderby=relevance&start-index=1&max-results=10&v=2&format=5&alt=json";
     private static final String YOUTUBE_VIDEO_URL = "https://youtube.com/watch?v=";
     
+    private static final String TAG = "HomeActivity";
     private Context context;
     
     private String artistName;
     
-    private ArrayList<VideoClass> videos;
     private ArrayList<VideoClass> playlist;
     
     private TextView currentArtist;
@@ -112,6 +115,9 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
     private ArrayList<String> artistSongList;
     
     boolean last = false;
+    
+    private Intent musicServiceIntent;
+
     MediaPlayer sound;
         
     private YoutubeTask ytTask;
@@ -121,6 +127,10 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
     public static final String APP_KEY = "9efd11ff27117b5000f4d69d9e6aa17a0332e53e";
     public static final String BUG_KEY = "b27d57ef";
     public static final String FLURRY_KEY = "4GF6RX8PZ7DP53V795RF";
+    
+    private MusicService musicService;
+    
+    ArrayList<VideoClass> videos;
 
     
     //public static final BUG_KEY = ""
@@ -143,7 +153,6 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
         res = getResources();
         
         
-        this.searchText = (EditText) findViewById(R.id.songSearchText);
         
         videos = new ArrayList<VideoClass>();
         playlist = new ArrayList<VideoClass>();
@@ -178,11 +187,6 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
         menuListView.setOnItemClickListener(this);
         
         //playlistListView.setOnItemClickListener(this);
-        justButton = (Button) findViewById(R.id.justButton);
-        justButton.setOnClickListener(this);
-        
-        similarButton = (Button) findViewById(R.id.similarButton);
-        similarButton.setOnClickListener(this);
         
         artistSongList = new ArrayList<String>();
         
@@ -194,6 +198,16 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
         MenuInflater inflater = getSupportMenuInflater();
     	inflater.inflate(R.menu.activity_home, menu);
         return true;
+    }
+    
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    	if(requestCode == 1) {
+    		
+    		if(resultCode == RESULT_OK) {
+    			videos = (ArrayList<VideoClass>) data.getSerializableExtra("videos");
+    			//artist = data.getStringExtra("artist");
+    		}
+    	}
     }
     
     private HttpClient createHttpsClient()
@@ -601,75 +615,17 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 	@Override
     public void onClick(View v) {
         // TODO Auto-generated method stub
-        
-        String search = this.searchText.getText().toString().trim();
-        
-        this.artistName = search;
-        
-        if(search.length() == 0) {
-            Toast.makeText(context, "No text specified!", Toast.LENGTH_SHORT).show();
-        }
-        
-        else {
-        	
-        	if(videos.size() != 0) {
-        		videos.clear();
-        	}
-        	
-        	int numOfSongs = v.getId() == R.id.justButton ? 40 : 20;
-        	String type = v.getId() == R.id.justButton ? "just" : "similar";
-        	String search_url = "";
-        	
-        	try {
-				search_url = v.getId() == R.id.justButton ? ECHONEST_SONG_URL + URLEncoder.encode(search, "UTF-8") + ECHONEST_RESULT_URL + Integer.toString(numOfSongs) : ECHONEST_SIMILAR_URL + URLEncoder.encode(search, "UTF-8") + ECHONEST_RESULT_URL + Integer.toString(numOfSongs);
-			} catch (UnsupportedEncodingException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			} 
-        	
           switch (v.getId()) {
           
           		case R.id.artistNameText:
           			
-          			break;
-                case R.id.justButton:
-                    try {
-                    	//prog = ProgressDialog.show(this, "", "Finding songs only for: "  + search);
-                        String url = ECHONEST_SONG_URL + URLEncoder.encode(search, "UTF-8") + ECHONEST_RESULT_URL + Integer.toString(numOfSongs);
-                        
-                        Intent i = new Intent(this, PlaylistActivity.class);
-                        i.putExtra("url", url);
-                        i.putExtra("type", type);
-                        i.putExtra("artist", search);
-                        startActivity(i);
-                    } catch (UnsupportedEncodingException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }                   
-                    break;
-                    
-                    
-                case R.id.similarButton:        
-                    try {
-                        String url = ECHONEST_SIMILAR_URL + URLEncoder.encode(search, "UTF-8") + ECHONEST_RESULT_URL + Integer.toString(numOfSongs);
-                        //String type = "similar";
-                        EchoSimilarTask myTask = new EchoSimilarTask();
-                        myTask.execute(url);
-                        //Text(this.context, url, Toast.LENGTH_SHORT).show();
-                        
-                    } catch (UnsupportedEncodingException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                    
-                    break;
-                 
+          			break;                                   
                 
             }
             
         }
 
-    }
+    
 
     public String getPage(String URLToFetch) {
         // TODO Auto-generated method stub
@@ -750,8 +706,9 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 			        i.putExtra("url", s_url);
 			        i.putExtra("type", s_type);
 			        i.putExtra("artist", s_artist);
+			        i.putExtra("new", true);
 			        
-			        startActivity(i);
+			        startActivityForResult(i, 1);
 				}
 				
 				else {
@@ -789,8 +746,9 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 			        i.putExtra("url", s_url);
 			        i.putExtra("type", s_type);
 			        i.putExtra("artist", s_artist);
+			        i.putExtra("new", true);
 			        
-			        startActivity(i);
+			        startActivityForResult(i, 1);
 				}
 				
 				else {
@@ -812,6 +770,35 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
         BugSenseHandler.initAndStartSession(this, BUG_KEY);
         Bugsnag.register(this, "1d479c585e3d333a05943f37bef208cf");
         FlurryAgent.onStartSession(this, FLURRY_KEY);
+    }
+    
+    private final class MusicServiceConnection implements ServiceConnection {
+
+		@Override
+		public void onServiceConnected(ComponentName className, IBinder baBinder) {
+			// TODO Auto-generated method stub
+			Log.d("PlaylistActivity", "MusicServiceConnection: Service connected");
+			musicService = ((MusicService.MusicServiceBinder) baBinder).getService();
+			musicServiceIntent = new Intent(getApplicationContext(), MusicService.class);
+    		musicServiceIntent.putExtra("videos", videos);
+    		musicServiceIntent.putExtra("artists", s_artist);
+			//MusicService.setMainActivity(PlaylistActivity.this);
+    		//musicServiceIntent.putExtra("videos", videoList);
+			//startService(musicServiceIntent);
+			
+			//musicService.playCurrentSong();
+			
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName className) {
+			// TODO Auto-generated method stub
+			Log.d(TAG, "ServiceConnection: Service disconnected.");
+			
+			musicService = null;
+			//startService(musicServiceIntent);
+		}
+    	
     }
 
     

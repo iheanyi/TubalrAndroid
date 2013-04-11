@@ -43,9 +43,9 @@ import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
-import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageButton;
@@ -79,8 +79,11 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 	
     private final static String TAG = "MusicService";
     private int current = 0;
-    
+    private final Handler handler = new Handler();
+
     private static PlaylistActivity myActivity;
+    
+    private NotificationManager mNotificationManager;
     private Notification notification;
 
 	public class MusicServiceBinder extends Binder {
@@ -121,12 +124,12 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		final TextView timeText = (TextView) myActivity.findViewById(R.id.timeText);
 		
 		if(mp.isPlaying()) {
-			songSeek.setProgress(mp.getCurrentPosition());
+			//songSeek.setProgress(mp.getCurrentPosition());
 			timeText.setText(getTimeString(songSeek.getProgress()));	
 		}
 	}
 	
-	private void showNotification() {
+	/*private void showNotification() {
 		
 		Intent intent = new Intent(this, PlaylistActivity.class);
 		PendingIntent pIntent = PendingIntent.getActivity(this, 0, intent, Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -141,7 +144,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		//notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		notification.flags |= Notification.FLAG_INSISTENT;
 		//notificationManager.notify(0, notification);
-	}
+	}*/
 	
 	private void updateNotification() {
 		
@@ -167,32 +170,30 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 	    return buf.toString();
 	}
 
-
-/*	@TargetApi(Build.VERSION_CODES.GINGERBREAD)
-	@Override
-	public void onCompletion(MediaPlayer mp) {
-		// TODO Auto-generated method stub
-		
-		mMediaPlayer = null;
-		
-		if(mNextMediaPlayer != null) {
-			mNextMediaPlayer.release();
-			mNextMediaPlayer = null;
-		}
-
-		/*mNextMediaPlayer = new MediaPlayer();
-		mNextMediaPlayer.setWakeMode(MusicService.this, PowerManager.PARTIAL_WAKE_LOCK);
-		
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-			mNextMediaPlayer.setAudioSessionId(mMediaPlayer.getAudioSessionId());
-		}
-	}*/
-
 	@Override
 	public boolean onError(MediaPlayer mp, int what, int extra) {
 		// TODO Auto-generated method stub
 		return false;
 	}
+	
+    public void startPlayProgressUpdater() {
+		final SeekBar songSeek = (SeekBar) myActivity.findViewById(R.id.songSeekBar);
+
+        songSeek.setProgress(mMediaPlayer.getCurrentPosition());
+
+        if (mMediaPlayer.isPlaying()) {
+            Runnable notification = new Runnable() {
+                public void run() {
+                    startPlayProgressUpdater();
+                }
+            };
+            
+            handler.postDelayed(notification,1000);
+        } else{
+            mMediaPlayer.pause();
+            //songSeek.setProgress(0);
+        }
+    }
 
 	@Override
 	public void onPrepared(MediaPlayer mp) {
@@ -230,7 +231,11 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 
 			
 		
-		//playlistUpdated();
+		playlistUpdated();
+		
+		
+        startPlayProgressUpdater();
+
 		
 	}
 	
@@ -401,7 +406,10 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 			mMediaPlayer.setOnCompletionListener(this);
 			
 			final TextView currentText = (TextView) myActivity.findViewById(R.id.currentTextView);
-			currentText.setText(video.getTitle());
+			currentText.setText(video.getTitle());	
+	
+			
+
 			
 
 		} catch (IOException ioe){
@@ -423,7 +431,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		Log.v(TAG, "Currently in nextTrack()");
 		current++;
 		
-		if(current == videoList.size()) {
+		if(current >= videoList.size()) {
 			current = 0;
 		}
 		
@@ -485,6 +493,11 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		}
 		
 		return videoList.get(current);
+	}
+	
+	public ArrayList<VideoClass> getVideos() {
+		
+		return videoList;
 	}
 	
 	public int elapsed() {
@@ -729,6 +742,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 
 		else {
             //String time = String.format("%d:%d", TimeUnit.MILLISECONDS.toMinutes(player.getDuration()), TimeUnit.MILLISECONDS.toSeconds(player.getDuration()) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(player.getDuration())));
+			seekBar.setProgress(progress);
 			timeText.setText(getTimeString(seekBar.getProgress()));
 		}
 	}

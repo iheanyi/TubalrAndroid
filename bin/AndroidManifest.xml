@@ -5,7 +5,7 @@
     android:versionName="1.1" >
 
     <uses-sdk
-        android:minSdkVersion="7"
+        android:minSdkVersion="11"
         android:targetSdkVersion="16" />
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -13,39 +13,44 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-	<uses-permission android:name="android.permission.READ_PHONE_STATE"></uses-permission>
-	<uses-permission android:name="android.permission.GET_TASKS"></uses-permission>
-	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"></uses-permission>
-	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"></uses-permission>	
-	<uses-permission android:name="android.permission.BLUETOOTH"></uses-permission>
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" >
+    </uses-permission>
+    <uses-permission android:name="android.permission.GET_TASKS" >
+    </uses-permission>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" >
+    </uses-permission>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" >
+    </uses-permission>
+    <uses-permission android:name="android.permission.BLUETOOTH" >
+    </uses-permission>
 
     <instrumentation
-	   android:name="com.apphance.android.ApphanceInstrumentation"
-	   android:targetPackage="com.iheanyiekechukwu.tubalr">
-	</instrumentation>
+        android:name="com.apphance.android.ApphanceInstrumentation"
+        android:targetPackage="com.iheanyiekechukwu.tubalr" >
+    </instrumentation>
+
     <application
         android:allowBackup="true"
         android:icon="@drawable/tubalr_icon"
         android:label="@string/app_name"
         android:theme="@style/Theme.Sherlock" >
-       	<service android:name=".PlaylistService"/>
-       	<service android:name=".MusicService"/>
-        
+        <service android:name="com.iheanyiekechukwu.tubalr.PlaylistService" />
+        <service android:name="com.iheanyiekechukwu.tubalr.MusicService" />
+
         <activity
             android:name="com.iheanyiekechukwu.tubalr.HomeActivity"
-            android:label="@string/app_name"
-            android:configChanges="keyboardHidden|orientation"  >
+            android:configChanges="keyboardHidden|orientation"
+            android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
         <activity
             android:name="com.iheanyiekechukwu.tubalr.LoginActivity"
             android:label="@string/title_activity_login"
-            android:windowSoftInputMode="stateHidden|adjustPan">
+            android:windowSoftInputMode="stateHidden|adjustPan" >
         </activity>
         <activity
             android:name="com.iheanyiekechukwu.tubalr.SettingsActivity"
@@ -53,24 +58,26 @@
         </activity>
         <activity
             android:name="com.iheanyiekechukwu.tubalr.PlaylistActivity"
+            android:configChanges="keyboardHidden|orientation"
             android:label="@string/title_activity_playlist"
-			android:screenOrientation="portrait"
-            android:parentActivityName="com.iheanyiekechukwu.tubalr.HomeActivity" 
-            android:configChanges="keyboardHidden|orientation" >
+            android:parentActivityName="com.iheanyiekechukwu.tubalr.HomeActivity"
+            android:screenOrientation="portrait" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.iheanyiekechukwu.tubalr.HomeActivity" />
-            
-            
-           	<intent-filter >
-	        	<action android:name="com.iheanyiekechukwu.tubalr.MusicService.PlAYLIST_UPDATED"/>
-	       		<action android:name="com.iheanyiekechukwu.tubalr.MusicService.NEXT_TRACK"/>
-	       		<action android:name="com.iheanyiekechukwu.tubalr.MusicService.PLAY_TRACK"/>
-	       		<action android:name="com.iheanyiekechukwu.tubalr.MusicService.PAUSE_TRACK"/>
-	       		<action android:name="com.iheanyiekechukwu.tubalr.MusicService.PLAY_SELECT"/>
-	       		<action android:name="com.iheanyiekechukwu.tubalr.MusicService.PREV_TRACK"/>
-	       			       			
-	        </intent-filter>
+
+            <intent-filter>
+                <action android:name="com.iheanyiekechukwu.tubalr.MusicService.PlAYLIST_UPDATED" />
+                <action android:name="com.iheanyiekechukwu.tubalr.MusicService.NEXT_TRACK" />
+                <action android:name="com.iheanyiekechukwu.tubalr.MusicService.PLAY_TRACK" />
+                <action android:name="com.iheanyiekechukwu.tubalr.MusicService.PAUSE_TRACK" />
+                <action android:name="com.iheanyiekechukwu.tubalr.MusicService.PLAY_SELECT" />
+                <action android:name="com.iheanyiekechukwu.tubalr.MusicService.PREV_TRACK" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.iheanyiekechukwu.tubalr.MainActivity"
+            android:label="@string/title_activity_main" >
         </activity>
     </application>
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component jdk="1.7" jdk_type="JavaSDK">
+	<exclude-output/>
+	<contentEntry url="file://$MODULE_DIR$"/>
+	<lib name="bugsense3.2.2.jar" scope="COMPILE">
+		<relative-module-cls project-related="jar://$PROJECT_DIR$/libs/bugsense3.2.2.jar!/"/>
+	</lib>
+	<lib name="FlurryAgent.jar" scope="COMPILE">
+		<relative-module-cls project-related="jar://$PROJECT_DIR$/libs/FlurryAgent.jar!/"/>
+	</lib>
+	<lib name="bugsnag-android-2.0.4.jar" scope="COMPILE">
+		<relative-module-cls project-related="jar://$PROJECT_DIR$/libs/bugsnag-android-2.0.4.jar!/"/>
+	</lib>
+</component>

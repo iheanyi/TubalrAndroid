@@ -6,4 +6,5 @@
         <color name="gray_color">#808080</color>
         <color name="main_background">#292929</color>
         <color name="buffer_color">#4283F4</color>
+        <drawable name="row_select">#409DBD</drawable>
     </resources>

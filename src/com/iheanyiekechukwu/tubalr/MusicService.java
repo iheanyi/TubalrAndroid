@@ -338,6 +338,97 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		
 	}
 	
+	public static void updateButtons() {
+		
+		
+		if(myActivity != null) {
+			final ImageButton playButton = (ImageButton) myActivity.findViewById(R.id.playButton);
+			//playButton.setOnClickListener(MusicService);
+			
+			final ImageButton pauseButton = (ImageButton) myActivity.findViewById(R.id.pauseButton);
+			
+			if(isPlaying()) {
+				playButton.setVisibility(View.GONE);
+				pauseButton.setVisibility(View.VISIBLE);
+				
+				playButton.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View arg0) {
+						// TODO Auto-generated method stub
+						if(mMediaPlayer != null && !(mMediaPlayer.isPlaying())) {
+							mMediaPlayer.start();
+							paused = false;
+							pauseButton.setVisibility(View.VISIBLE);
+							playButton.setVisibility(View.GONE);
+						}
+					}
+					
+				});
+				
+				pauseButton.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View arg0) {
+						// TODO Auto-generated method stub
+						if(mMediaPlayer.isPlaying() && mMediaPlayer != null) {
+							pause();
+							pauseButton.setVisibility(View.GONE);
+							playButton.setVisibility(View.VISIBLE);
+						}
+					}
+					
+				});		
+				
+			}
+		}
+		
+		if(homeActivity != null) {
+			final ImageButton playButton = (ImageButton) homeActivity.findViewById(R.id.homePlayButton);
+			
+			final ImageButton pauseButton = (ImageButton) homeActivity.findViewById(R.id.homePauseButton);
+			
+			final TextView currentText = (TextView) homeActivity.findViewById(R.id.artistNameText);
+			currentText.setText(videoList.get(current).getTitle());
+			
+			if(isPlaying()) {
+				playButton.setVisibility(View.GONE);
+				pauseButton.setVisibility(View.VISIBLE);
+				
+				playButton.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View arg0) {
+						// TODO Auto-generated method stub
+						if(mMediaPlayer != null && !(mMediaPlayer.isPlaying())) {
+							mMediaPlayer.start();
+							paused = false;
+							pauseButton.setVisibility(View.VISIBLE);
+							playButton.setVisibility(View.GONE);
+						}
+					}
+					
+				});
+				
+				pauseButton.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View arg0) {
+						// TODO Auto-generated method stub
+						if(mMediaPlayer.isPlaying() && mMediaPlayer != null) {
+							pause();
+							pauseButton.setVisibility(View.GONE);
+							playButton.setVisibility(View.VISIBLE);
+						}
+					}
+					
+				});		
+				
+			}
+		}
+
+	}
+	
 	public static void setMainActivity(HomeActivity hActivity) {
 		
 		Log.v(TAG, "SETMAINACTIVITY CALLED FOR HOME ACTIVITY.");

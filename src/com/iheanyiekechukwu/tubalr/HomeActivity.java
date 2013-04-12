@@ -976,6 +976,10 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 	public void onResume() {
 		  super.onResume();
 		  
+		  
+		  if(musicService != null || mBound) {
+			  musicService.updateButtons();
+		  }
 		  //musicServiceIntent = new Intent(this, MusicService.class);
 		  //bindService(musicServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 		  

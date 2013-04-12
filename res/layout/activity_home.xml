@@ -5,49 +5,6 @@
     android:orientation="vertical"
     tools:context=".HomeActivity" >
 
-    <TabHost
-        android:id="@android:id/tabhost"
-        android:layout_alignParentTop="true"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" >
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical" >
-
-            <TabWidget
-                android:id="@android:id/tabs"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" >
-            </TabWidget>
-
-            <FrameLayout
-                android:id="@android:id/tabcontent"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" >
-
-                <LinearLayout
-                    android:id="@+id/tab1"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent" >
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/tab2"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent" >
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/tab3"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent" >
-                </LinearLayout>
-            </FrameLayout>
-        </LinearLayout>
-    </TabHost>
-
     <ListView
         android:id="@+id/homeFixedListView"
         android:layout_width="fill_parent"
@@ -73,6 +30,7 @@
             android:layout_weight="1"
             android:clickable="true"
             android:onClick="onClick"
+            android:background="@drawable/selector_with_transparency"               
             android:paddingLeft="16dp"
             android:text="Artist Name Here"
             android:textColor="#fff" />
@@ -85,26 +43,40 @@
             android:gravity="right" >
 
             <ImageButton
-                android:id="@+id/imageButton1"
-                android:layout_width="wrap_content"
+                android:id="@+id/homePrevButton"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@null"
+                android:layout_weight="1"
+                
+                android:background="@drawable/selector_with_transparency"                
                 android:padding="8dp"
                 android:src="@drawable/player_first" />
 
             <ImageButton
-                android:id="@+id/imageButton2"
-                android:layout_width="wrap_content"
+                android:id="@+id/homePlayButton"
+                android:layout_weight="1"                
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@null"
+                android:background="@drawable/selector_with_transparency"
                 android:padding="8dp"
                 android:src="@drawable/player_play" />
 
             <ImageButton
-                android:id="@+id/imageButton3"
-                android:layout_width="wrap_content"
+                android:id="@+id/homePauseButton"
+                android:layout_width="0dp"
+               	android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:background="@null"
+                android:background="@drawable/selector_with_transparency"               
+                android:src="@drawable/player_pause"
+                android:padding="8dp"              
+                android:visibility="gone" />
+
+            <ImageButton
+                android:id="@+id/homeNextButton"
+                android:layout_weight="1"         
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:background="@drawable/selector_with_transparency"
                 android:padding="8dp"
                 android:src="@drawable/player_last" />
         </LinearLayout>

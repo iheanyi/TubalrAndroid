@@ -29,12 +29,16 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.res.Resources;
 import android.graphics.Typeface;
@@ -50,9 +54,13 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.Checkable;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.MediaController;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -63,10 +71,7 @@ import com.actionbarsherlock.view.MenuItem;
 import com.bugsense.trace.BugSenseHandler;
 import com.bugsnag.android.Bugsnag;
 import com.flurry.android.FlurryAgent;
-//Optionally import Apphance's logging functions (see: Step 7)
-//import com.apphance.android.Log;
-/*import android.view.Menu;
-import android.view.MenuItem;*/
+
 
 
 public class HomeActivity extends SherlockActivity implements OnItemClickListener, OnClickListener {
@@ -76,10 +81,19 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
     private Resources res;
     private String[] menuNames;
     
+	private BroadcastReceiver musicServiceBroadcastReceiver;
+
+    
+    private MusicService musicService;
+	private ServiceConnection serviceConnection = new MusicServiceConnection();
+
+    
     private ListView menuListView;
     private EditText searchText;
     
     private ProgressDialog prog;
+    
+    private boolean paused = false;
     
     
     // EchoNest URLs
@@ -112,6 +126,8 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
     
     private String tempID;
     
+    private boolean mBound = false;
+    
     private ArrayList<String> artistSongList;
     
     boolean last = false;
@@ -122,15 +138,29 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
         
     private YoutubeTask ytTask;
     
+    private ImageButton homePlayButton;
+    private ImageButton homePauseButton;
+    
 	private String s_url, s_artist, s_search, s_type = "";
 
     public static final String APP_KEY = "9efd11ff27117b5000f4d69d9e6aa17a0332e53e";
     public static final String BUG_KEY = "b27d57ef";
     public static final String FLURRY_KEY = "4GF6RX8PZ7DP53V795RF";
     
-    private MusicService musicService;
-    
+    private LinearLayout controlLayout;
+       
     ArrayList<VideoClass> videos;
+    
+    private ImageButton nextButton;
+    private ImageButton prevButton;
+    
+	public static final String INTENT_BASE_NAME = "com.iheanyiekechukwu.tubalr.MusicService";
+	public static final String NEXT_TRACK = INTENT_BASE_NAME + ".NEXT_TRACK";
+	public static final String PLAY_TRACK = INTENT_BASE_NAME + ".PLAY_TRACK";
+	public static final String PREV_TRACK = INTENT_BASE_NAME + ".PREV_TRACK";
+	public static final String PAUSE_TRACK = INTENT_BASE_NAME + ".PAUSE_TRACK";
+	public static final String PLAY_SELECT = INTENT_BASE_NAME + ".PLAY_SELECT";
+	public static final String NEW_SONGS = INTENT_BASE_NAME + ".NEW_SONGS";
 
     
     //public static final BUG_KEY = ""
@@ -164,6 +194,21 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 		currentArtist = (TextView) findViewById(R.id.artistNameText);
 		currentArtist.setOnClickListener(this);
 		
+		controlLayout = (LinearLayout) findViewById(R.id.controlLayout);
+		
+		if(!isMyServiceRunning()) {
+			controlLayout.setVisibility(View.GONE);
+		}
+		
+		prevButton = (ImageButton) findViewById(R.id.homePrevButton);
+		nextButton = (ImageButton) findViewById(R.id.homeNextButton);
+		
+		homePlayButton = (ImageButton) findViewById(R.id.homePlayButton);
+		homePauseButton = (ImageButton) findViewById(R.id.homePrevButton);
+		
+		prevButton.setOnClickListener(this);
+		nextButton.setOnClickListener(this);
+		
 	   /* int actionBarTitleId = Resources.getSystem().getIdentifier("action_bar_title", "id", "android");
 	    TextView actionBarTextView = (TextView) findViewById(actionBarTitleId);
 	    actionBarTextView.setTextColor(Color.WHITE);*/
@@ -180,6 +225,10 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
        //playlistViewAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, playlistStringArray);
         menuNames = res.getStringArray(R.array.home_menu);
         
+		Typeface bolded = Typeface.createFromAsset(context.getAssets(), "fonts/Roboto-Regular.ttf");
+		Typeface light = Typeface.createFromAsset(context.getAssets(), "fonts/Roboto-Light.ttf");
+		
+        currentArtist.setTypeface(bolded);
 //      playlistListView.setAdapter(playlistViewAdapter);
         
         menuAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, menuNames);
@@ -200,14 +249,47 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
         return true;
     }
     
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    	if(requestCode == 1) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) { 
+    	
+    		Log.d(TAG, "On activity result!");
     		
-    		if(resultCode == RESULT_OK) {
-    			videos = (ArrayList<VideoClass>) data.getSerializableExtra("videos");
-    			//artist = data.getStringExtra("artist");
+    		switch(requestCode) {
+    			case 1:
+    	    		if(resultCode == RESULT_OK) {
+    	    			
+    	    			Log.d(TAG, "Activity for Result! RESULT OK!");	
+    	    			videos = (ArrayList<VideoClass>) data.getSerializableExtra("videos");
+    		    		
+    	    			if(isMyServiceRunning()) {
+    	    				controlLayout.setVisibility(View.VISIBLE);
+    	    			}
+    	    			
+    	    			
+    		    		if(musicServiceIntent == null) {
+    		    			MusicService.setMainActivity(HomeActivity.this);
+    		    			musicServiceIntent = new Intent(this, MusicService.class);
+
+    			    		bindService(musicServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+    		    		}
+    		    		
+    		    		
+    	    			
+    			    	musicServiceBroadcastReceiver = new MusicServiceBroadcastReceiver();
+    			    	IntentFilter filter = new IntentFilter(MusicService.UPDATE_PLAYLIST);
+    			    	filter.addAction(MusicService.NEXT_TRACK);
+    			    	filter.addAction(MusicService.PREV_TRACK);
+    			    	filter.addAction(MusicService.PAUSE_TRACK);
+    			    	filter.addAction(MusicService.PLAY_SELECT);
+    			    	filter.addAction(MusicService.NEW_SONGS);
+    			    	registerReceiver(musicServiceBroadcastReceiver, filter);
+    	    			
+    	    			//artist = data.getStringExtra("artist");
+    			    	Log.d(TAG, "DONE REGISTERING JUNTS");
+    	    	}
+    	    		
+    	    		break;
     		}
-    	}
+
     }
     
     private HttpClient createHttpsClient()
@@ -621,9 +703,32 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
           			
           			break;                                   
                 
+        		case R.id.homeNextButton:
+
+        			Log.d(TAG, "NextButton in Home Activity clicked!");
+        			Intent nextTrackIntent = new Intent(NEXT_TRACK);
+        			this.sendBroadcast(nextTrackIntent);
+        			
+        			//playNextTrack();
+        	    
+        			break;
+        			
+        		case R.id.homePrevButton:
+
+        			Log.d(TAG, "previousButton in Home Activity clicked!");
+
+        			Intent prevTrackIntent = new Intent(PREV_TRACK);
+        			this.sendBroadcast(prevTrackIntent);
+        			
+        			break;
+    			
+        			
+        		default: 
+        			break;
+        		}
             }
             
-        }
+        
 
     
 
@@ -708,6 +813,9 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 			        i.putExtra("artist", s_artist);
 			        i.putExtra("new", true);
 			        
+			        if(mBound) {
+			        	unbindService(serviceConnection);
+			        }
 			        startActivityForResult(i, 1);
 				}
 				
@@ -748,6 +856,12 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 			        i.putExtra("artist", s_artist);
 			        i.putExtra("new", true);
 			        
+			        
+			        if(mBound) {
+			        	unbindService(serviceConnection);
+			        }
+			        
+			        
 			        startActivityForResult(i, 1);
 				}
 				
@@ -777,12 +891,17 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 		@Override
 		public void onServiceConnected(ComponentName className, IBinder baBinder) {
 			// TODO Auto-generated method stub
-			Log.d("PlaylistActivity", "MusicServiceConnection: Service connected");
+			Log.d(TAG, "MusicServiceConnection: Service connected");
 			musicService = ((MusicService.MusicServiceBinder) baBinder).getService();
 			musicServiceIntent = new Intent(getApplicationContext(), MusicService.class);
-    		musicServiceIntent.putExtra("videos", videos);
-    		musicServiceIntent.putExtra("artists", s_artist);
-			//MusicService.setMainActivity(PlaylistActivity.this);
+    		//musicServiceIntent.putExtra("videos", videos);
+    		//musicServiceIntent.putExtra("artists", s_artist);
+			MusicService.setMainActivity(HomeActivity.this);
+			
+			mBound = true;
+			
+			//bindService(musicServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+
     		//musicServiceIntent.putExtra("videos", videoList);
 			//startService(musicServiceIntent);
 			
@@ -796,11 +915,117 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 			Log.d(TAG, "ServiceConnection: Service disconnected.");
 			
 			musicService = null;
+			musicServiceIntent = null;
+			serviceConnection = null;
+			
+			mBound = false;
 			//startService(musicServiceIntent);
 		}
     	
     }
-
     
+
+	private boolean isMyServiceRunning() {
+	    ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+	    for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+	        if (MusicService.class.getName().equals(service.service.getClassName())) {
+	            return true;
+	        }
+	    }
+	    return false;
+	}
+    
+    private class MusicServiceBroadcastReceiver extends BroadcastReceiver {
+    	
+    	public void onReceive(Context context, Intent intent) {
+    		Log.d("PlaylistActivity", "MusicServiceBroadcastReceive.onReceive action =  " + intent.getAction());
+    		if(MusicService.UPDATE_PLAYLIST.equals(intent.getAction())) {
+    			Log.d(TAG, "updatePlaylist is called!");
+    			//updatePlayQueue();
+    			
+    			updatePlayPanel(musicService.getCurrentVideo());
+
+    			
+    			currentArtist.setText(musicService.getCurrentVideo().getTitle());
+    		}
+    	}
+    	
+    }
+    
+	private void updatePlayPanel(final VideoClass video) {
+		Log.v(TAG, "PlaylistActivity(): Updating the Play Panel");
+
+	}
+	
+	private void updatePlayPauseButtonState() {
+		Log.v(TAG, "updatePlayPauseButtonState()");
+		
+		//Log.v(TAG, Boolean.toString(musicService.isPlaying()));
+		
+		if(musicService.isPlaying()) {
+			homePauseButton.setVisibility(View.VISIBLE);
+			homePlayButton.setVisibility(View.GONE);
+		} else {
+			homePauseButton.setVisibility(View.GONE);
+			homePlayButton.setVisibility(View.VISIBLE);
+		}
+		
+	}
+    
+    @Override
+	public void onResume() {
+		  super.onResume();
+		  
+		  //musicServiceIntent = new Intent(this, MusicService.class);
+		  //bindService(musicServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+		  
+		//registerReceiver(musicServiceBroadcastReceiver, filter);
+		  
+		  //refreshScreen();
+	      
+
+		  //registerReceiver(playlistReceiver, intentFilter);
+	  }
+    
+    public void onPause() {
+	    //super.onPause();
+	    
+		  if(musicServiceBroadcastReceiver != null) {
+			  unregisterReceiver(musicServiceBroadcastReceiver);
+			  musicServiceBroadcastReceiver = null;
+		  }
+		
+		  if(mBound) {
+			 // unbindService(serviceConnection);
+		  }
+
+	    
+	    
+	    super.onPause();
+	    //unregisterReceiver(playlistReceiver);
+	    //playlistReceiver = null;
+	    
+	  }
+    
+    
+    public void onDestroy() {
+	    //super.onPause();
+	    
+		  if(musicServiceBroadcastReceiver != null) {
+			  unregisterReceiver(musicServiceBroadcastReceiver);
+			  musicServiceBroadcastReceiver = null;
+		  }
+		
+		  if(mBound) {
+			 unbindService(serviceConnection);
+		  }
+
+	    
+	    
+	    super.onDestroy();
+	    //unregisterReceiver(playlistReceiver);
+	    //playlistReceiver = null;
+	    
+	  }
     
 }

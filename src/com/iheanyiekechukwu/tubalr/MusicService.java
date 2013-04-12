@@ -82,6 +82,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
     private final Handler handler = new Handler();
 
     private static PlaylistActivity myActivity;
+    private static HomeActivity homeActivity;
     
     private NotificationManager mNotificationManager;
     private Notification notification;
@@ -120,13 +121,18 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 	@Override
 	public void onBufferingUpdate(MediaPlayer mp, int percent) {
 		// TODO Auto-generated method stub
-		final SeekBar songSeek = (SeekBar) myActivity.findViewById(R.id.songSeekBar);
-		final TextView timeText = (TextView) myActivity.findViewById(R.id.timeText);
-		
-		if(mp.isPlaying()) {
-			//songSeek.setProgress(mp.getCurrentPosition());
-			timeText.setText(getTimeString(songSeek.getProgress()));	
-		}
+
+			if(myActivity != null) {
+				final SeekBar songSeek = (SeekBar) myActivity.findViewById(R.id.songSeekBar);
+				final TextView timeText = (TextView) myActivity.findViewById(R.id.timeText);
+				
+				if(mp.isPlaying()) {
+					//songSeek.setProgress(mp.getCurrentPosition());
+					timeText.setText(getTimeString(songSeek.getProgress()));	
+				}	
+			}
+
+
 	}
 	
 	/*private void showNotification() {
@@ -160,10 +166,14 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 	    int minutes = (int) ( millis % (1000*60*60) ) / (1000*60);
 	    int seconds = (int) (( millis % (1000*60*60) ) % (1000*60) ) / 1000;
 
-	    buf
+	    
+	    if(hours > 0) {
+	    	buf.append(String.format("%02d", hours));
+	    	buf.append(":");
+	    }
         //.append(String.format("%02d", hours))
         //.append(":")
-        .append(String.format("%02d", minutes))
+        buf.append(String.format("%02d", minutes))
         .append(":")
         .append(String.format("%02d", seconds));
 	    
@@ -177,22 +187,32 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 	}
 	
     public void startPlayProgressUpdater() {
-		final SeekBar songSeek = (SeekBar) myActivity.findViewById(R.id.songSeekBar);
+    	
+    	if(myActivity != null) {
+    		
+    	
+    	final SeekBar songSeek = (SeekBar) myActivity.findViewById(R.id.songSeekBar);
 
-        songSeek.setProgress(mMediaPlayer.getCurrentPosition());
+    	
+    	if(mMediaPlayer != null) {
+        	songSeek.setProgress(mMediaPlayer.getCurrentPosition());
 
-        if (mMediaPlayer.isPlaying()) {
-            Runnable notification = new Runnable() {
-                public void run() {
-                    startPlayProgressUpdater();
-                }
-            };
-            
-            handler.postDelayed(notification,1000);
-        } else{
-            mMediaPlayer.pause();
-            //songSeek.setProgress(0);
-        }
+            if (mMediaPlayer.isPlaying()) {
+                Runnable notification = new Runnable() {
+                    public void run() {
+                        startPlayProgressUpdater();
+                    }
+                };
+                
+                handler.postDelayed(notification,1000);
+            } else{
+                mMediaPlayer.pause();
+                //songSeek.setProgress(0);
+            }
+    	}
+
+
+    	}
     }
 
 	@Override
@@ -201,40 +221,60 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		mp.start();
 		
 		//updateNotification();
-		final ImageView imageView = (ImageView) myActivity.findViewById(R.id.videoImageView);
 		
-		UrlImageViewHelper.setUrlDrawable(imageView, getCurrentVideo().getImageURL(), R.drawable.tubalr_icon);
-
-		final SeekBar songSeek = (SeekBar) myActivity.findViewById(R.id.songSeekBar);
-		final TextView timeText = (TextView) myActivity.findViewById(R.id.timeText);
-		final TextView maxText = (TextView) myActivity.findViewById(R.id.maxText);
-		
-		songSeek.setMax(mp.getDuration());
-		songSeek.setProgress(mp.getCurrentPosition());
-		songSeek.setOnSeekBarChangeListener(this);
-		timeText.setText(getTimeString(songSeek.getProgress()));
-		maxText.setText(getTimeString(mp.getDuration()));
-		
-		
-		final ImageButton playButton = (ImageButton) myActivity.findViewById(R.id.playButton);
-		final ImageButton pauseButton = (ImageButton) myActivity.findViewById(R.id.pauseButton);
-		
-		playButton.setOnClickListener(this);
-		pauseButton.setOnClickListener(this);
-		
-	    if(mMediaPlayer.isPlaying()) {
-	    	playButton.setVisibility(View.GONE);
-	        pauseButton.setVisibility(View.VISIBLE);
-	        
-	        paused = false;
-	    }
-
+		if(myActivity != null) {
+			final ImageView imageView = (ImageView) myActivity.findViewById(R.id.videoImageView);
 			
+			UrlImageViewHelper.setUrlDrawable(imageView, getCurrentVideo().getImageURL(), R.drawable.tubalr_icon);
+
+			final SeekBar songSeek = (SeekBar) myActivity.findViewById(R.id.songSeekBar);
+			final TextView timeText = (TextView) myActivity.findViewById(R.id.timeText);
+			final TextView maxText = (TextView) myActivity.findViewById(R.id.maxText);
+			
+			songSeek.setMax(mp.getDuration());
+			songSeek.setProgress(mp.getCurrentPosition());
+			songSeek.setOnSeekBarChangeListener(this);
+			timeText.setText(getTimeString(songSeek.getProgress()));
+			maxText.setText(getTimeString(mp.getDuration()));
+			
+			
+			final ImageButton playButton = (ImageButton) myActivity.findViewById(R.id.playButton);
+			final ImageButton pauseButton = (ImageButton) myActivity.findViewById(R.id.pauseButton);
+			
+			playButton.setOnClickListener(this);
+			pauseButton.setOnClickListener(this);
+			
+		    if(isPlaying() || mMediaPlayer.isPlaying()) {
+		    	playButton.setVisibility(View.GONE);
+		        pauseButton.setVisibility(View.VISIBLE);
+		        
+		        paused = false;
+		    }
+
+			playlistUpdated();
+			
+			
+	        startPlayProgressUpdater();
+					
+		}
 		
-		playlistUpdated();
+		if(homeActivity != null) {
+			final ImageButton playButton = (ImageButton) homeActivity.findViewById(R.id.homePlayButton);
+			final ImageButton pauseButton = (ImageButton) homeActivity.findViewById(R.id.homePauseButton);
 		
+			playButton.setOnClickListener(this);
+			pauseButton.setOnClickListener(this);
+			
+		    if(isPlaying() || mMediaPlayer.isPlaying()) {
+		    	playButton.setVisibility(View.GONE);
+		        pauseButton.setVisibility(View.VISIBLE);
+		        
+		        paused = false;
+		    }
+		}
+
 		
-        startPlayProgressUpdater();
+
 
 		
 	}
@@ -258,6 +298,30 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		
 		
 		
+	}
+	
+	public static void setMainActivity(HomeActivity hActivity) {
+		
+		Log.v(TAG, "SETMAINACTIVITY CALLED FOR HOME ACTIVITY.");
+
+		homeActivity = hActivity;
+		myActivity = null;
+		
+		final ImageButton playButton = (ImageButton) homeActivity.findViewById(R.id.homePlayButton);
+		playButton.setOnClickListener(homeActivity);
+		
+		final ImageButton pauseButton = (ImageButton) homeActivity.findViewById(R.id.homePauseButton);
+		pauseButton.setOnClickListener(homeActivity);
+		
+		final ImageButton nextButton = (ImageButton) homeActivity.findViewById(R.id.homeNextButton);
+		nextButton.setOnClickListener(homeActivity);
+		
+		final ImageButton prevButton = (ImageButton) homeActivity.findViewById(R.id.homePrevButton);
+		prevButton.setOnClickListener(homeActivity);
+
+		
+		
+	
 	}
 	
 	 public void decodeURL(String content) {
@@ -296,8 +360,40 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		// TODO Auto-generated method stub
         Log.v(TAG, "MusicService: onBind() called");
 
-        videoList = (ArrayList<VideoClass>) intent.getSerializableExtra("videos");
+        if((ArrayList<VideoClass>) intent.getSerializableExtra("videos") != null) {
+            videoList = (ArrayList<VideoClass>) intent.getSerializableExtra("videos");
+        }
         
+        if(broadcastReceiver == null) {
+            broadcastReceiver = new MusicServiceBroadcastReceiver();
+        }
+        
+		IntentFilter intentFilter = new IntentFilter();
+		intentFilter.addAction(PLAY_TRACK);
+		intentFilter.addAction(QUEUE_TRACK);
+		intentFilter.addAction(NEXT_TRACK);
+		intentFilter.addAction(PREV_TRACK);
+		intentFilter.addAction(PLAY_SELECT);
+		intentFilter.addAction(NEW_SONGS);
+		registerReceiver(broadcastReceiver, intentFilter);
+		
+		
+		if(homeActivity != null) {
+			final TextView currentText = (TextView) homeActivity.findViewById(R.id.artistNameText);
+			currentText.setText(videoList.get(current).getTitle());
+			
+			final ImageButton pauseButton = (ImageButton) homeActivity.findViewById(R.id.homePauseButton);
+			final ImageButton playButton = (ImageButton) homeActivity.findViewById(R.id.homePlayButton);
+			
+			if(mMediaPlayer.isPlaying()) {
+				pauseButton.setVisibility(View.GONE);
+				playButton.setVisibility(View.VISIBLE);
+			}
+
+			
+		} else {
+			
+		}
         //Log.v(TAG, Integer.toString(videoList.size()));
         
        // playFirstSong();
@@ -324,6 +420,15 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
         YoutubeVideoTask myTask = new YoutubeVideoTask();
         myTask.execute(yt_video_url);	
         
+	}
+	
+	@Override
+	public boolean onUnbind(Intent intent) {
+	    // All clients have unbound with unbindService()
+
+	    //release();
+
+	    return false;
 	}
 
 	public void onDestroy() {
@@ -405,8 +510,16 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 			
 			mMediaPlayer.setOnCompletionListener(this);
 			
-			final TextView currentText = (TextView) myActivity.findViewById(R.id.currentTextView);
-			currentText.setText(video.getTitle());	
+			if(myActivity != null) {
+				final TextView currentText = (TextView) myActivity.findViewById(R.id.currentTextView);
+				currentText.setText(video.getTitle());	
+			}
+			
+			if(homeActivity != null) {
+				final TextView currentText = (TextView) homeActivity.findViewById(R.id.artistNameText);
+				currentText.setText(video.getTitle());
+			}
+
 	
 			
 
@@ -480,9 +593,26 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 	}
 	
 	public void pause() {
-		if(mMediaPlayer != null) {
+		if(mMediaPlayer.isPlaying()) {
 			mMediaPlayer.pause();
 			paused = true;
+			
+			if(myActivity != null) {
+				final ImageButton pauseButton = (ImageButton) myActivity.findViewById(R.id.pauseButton);
+				final ImageButton playButton = (ImageButton) myActivity.findViewById(R.id.playButton);
+				
+				pauseButton.setVisibility(View.GONE);
+				playButton.setVisibility(View.VISIBLE);
+			}
+			
+			if(homeActivity != null) {
+				final ImageButton pauseButton = (ImageButton) homeActivity.findViewById(R.id.homePauseButton);
+				final ImageButton playButton = (ImageButton) homeActivity.findViewById(R.id.homePlayButton);
+				
+				pauseButton.setVisibility(View.GONE);
+				playButton.setVisibility(View.VISIBLE);
+			}
+			
 		}
 	}
 	
@@ -768,11 +898,59 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 
 	@Override
 	public void onClick(View v) {
-		// TODO Auto-generated method stub
+		// TODO Auto-generated method stub	
+		if(myActivity != null) {
+			final ImageButton pauseButton = (ImageButton) myActivity.findViewById(R.id.pauseButton);
+			final ImageButton playButton = (ImageButton) myActivity.findViewById(R.id.playButton);
+			switch (v.getId()) {
+
+			case R.id.playButton:
+				if(mMediaPlayer != null && !(mMediaPlayer.isPlaying())) {
+					mMediaPlayer.start();
+					//paused = false;
+					pauseButton.setVisibility(View.VISIBLE);
+					playButton.setVisibility(View.GONE);
+				}
+				break;
+
+			case R.id.pauseButton:
+				if(mMediaPlayer.isPlaying() && mMediaPlayer != null) {
+					pause();
+					pauseButton.setVisibility(View.GONE);
+					playButton.setVisibility(View.VISIBLE);
+				}
+				break;
+
+		} 
+			}
 		
-		final ImageButton pauseButton = (ImageButton) myActivity.findViewById(R.id.pauseButton);
-		final ImageButton playButton = (ImageButton) myActivity.findViewById(R.id.playButton);
-		switch (v.getId()) {
+		if(homeActivity != null) {
+			final ImageButton pauseButton = (ImageButton) homeActivity.findViewById(R.id.homePauseButton);
+			final ImageButton playButton = (ImageButton) homeActivity.findViewById(R.id.homePlayButton);
+			
+			switch (v.getId()) {
+
+			case R.id.homePlayButton:
+				if(mMediaPlayer != null && !(mMediaPlayer.isPlaying())) {
+					mMediaPlayer.start();
+					//paused = false;
+					pauseButton.setVisibility(View.VISIBLE);
+					playButton.setVisibility(View.GONE);
+				}
+				break;
+
+			case R.id.homePauseButton:
+				if(mMediaPlayer.isPlaying() && mMediaPlayer != null) {
+					pause();
+					pauseButton.setVisibility(View.GONE);
+					playButton.setVisibility(View.VISIBLE);
+				}
+				break;
+		} 
+			}
+		
+		
+		/*switch (v.getId()) {
 
 		case R.id.playButton:
 			if(mMediaPlayer != null && !(mMediaPlayer.isPlaying())) {
@@ -790,24 +968,45 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 				playButton.setVisibility(View.VISIBLE);
 			}
 			break;
+			
+		case R.id.homePlayButton:
+			Log.d(TAG, "HOME PLAY BUTTON CLICKED!");
 
-		/*case R.id.nextButton:
-			nextTrack();
+			if(mMediaPlayer != null && !(mMediaPlayer.isPlaying())) {
+				mMediaPlayer.start();
+				//paused = false;
+				pauseButton.setVisibility(View.VISIBLE);
+				playButton.setVisibility(View.GONE);
+			}
 			break;
 
-		case R.id.previousButton:
-
+			
+		case R.id.homePauseButton:
+			
+			Log.d(TAG, "HOME PAUSE BUTTON CLICKED!");
+			if(mMediaPlayer.isPlaying() && mMediaPlayer != null) {
+				pause();
+				pauseButton.setVisibility(View.GONE);
+				playButton.setVisibility(View.VISIBLE);
+			}
+			break;
+			
+		case R.id.homeNextButton:
+			nextTrack();
+			
+			break;
+		
+		case R.id.homePrevButton:
 			prevTrack();
-			break;*/
+			
+			break;
+			
+
+
 
 		default: 
-			break;
-		}
-
-		
+			break;*/
 	}
     
 	
-
-
 }

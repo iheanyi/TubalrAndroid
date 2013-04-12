@@ -31,6 +31,9 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
@@ -55,6 +58,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.support.v4.app.NavUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -132,6 +136,8 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
     private TextView currentTextView;
     
 	private ProgressDialog pd;
+	
+	private boolean mBound = false;
 	
 	private BroadcastReceiver musicServiceBroadcastReceiver = new MusicServiceBroadcastReceiver();
 	private ServiceConnection serviceConnection = new MusicServiceConnection();
@@ -219,7 +225,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		//pauseButton.setOnClickListener(this);
 		nextButton.setOnClickListener(this);
 		prevButton.setOnClickListener(this);
-		shuffleButton.setOnClickListener(this);
+		//shuffleButton.setOnClickListener(this);
 		
 		mReceiver = new MyResultReceiver(new Handler());
 		mReceiver.setReceiver(this);
@@ -398,10 +404,15 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 			// http://developer.android.com/design/patterns/navigation.html#up-vs-back
 			//
 			
+			Log.d(TAG, "Home as up called?");
 			Intent returnIntent = new Intent();
 			returnIntent.putExtra("videos", videoList);
 			setResult(RESULT_OK, returnIntent);
-			finish();
+			
+			if(mBound) {
+				unbindService(serviceConnection);
+			}
+			PlaylistActivity.this.finish();
 			//NavUtils.navigateUpFromSameTask(this);
 			return true;
 			
@@ -781,14 +792,19 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	private String getTimeString(long millis) {
 		StringBuffer buf = new StringBuffer();
 		
+		
 		int hours =(int) millis/(1000*60*60);
 	    int minutes = (int) ( millis % (1000*60*60) ) / (1000*60);
 	    int seconds = (int) (( millis % (1000*60*60) ) % (1000*60) ) / 1000;
 
-	    buf
-        //.append(String.format("%02d", hours))
-        //.append(":")
-        .append(String.format("%02d", minutes))
+	    
+	    
+	    if(hours > 0) {
+	    	buf.append(String.format("%02d", hours))
+	        .append(":");	
+	    }
+
+	    buf.append(String.format("%02d", minutes))
         .append(":")
         .append(String.format("%02d", seconds));
 	    
@@ -848,6 +864,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 			//View testView = 
 			Drawable d = getResources().getDrawable(R.drawable.list_select);
 			int firstVisible = playlistView.getFirstVisiblePosition();
+			
 			if(vid.getId().trim().equals(video.getId().trim())) {
 				Log.d(TAG, "MATCH FOUND FOR ID: " + vid.getId());
 				View v = playlistView.getChildAt(i - firstVisible);
@@ -858,7 +875,6 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 				
 			    if (newView instanceof Checkable) {
 					playlistView.setItemChecked(i, true);
-			        //((Checkable) newView).setChecked(mCheckStates.get(position));
 			    } else if (getBaseContext().getApplicationInfo().targetSdkVersion
 			            >= android.os.Build.VERSION_CODES.HONEYCOMB) {
 					newView.setActivated(true);
@@ -872,7 +888,6 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 				//newView.setBackgroundColor(Integer.parseInt("409DBD", 16) + 0xFF000000);
 				 
 			} else {
-				Log.d(TAG, "MATCH NOT FOUND FOR ID: " + vid.getId());
 				View v = playlistView.getChildAt(i - firstVisible);
 				//v.setSelected(false);
 				//playlistView.setItemChecked(i, false);
@@ -894,6 +909,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 			}
 			
 		}
+		
 		runOnUiThread(new Runnable() {
 			
 			public void run() {
@@ -1063,7 +1079,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	    		}
 	    		
 			  
-	    		else if(musicServiceIntent != null) {
+	    		/*else {
 	    			
 	    			Intent newSongIntent = new Intent(NEW_SONGS);
 	    			newSongIntent.putExtra("videos", videoList);
@@ -1076,7 +1092,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		    		musicServiceIntent.putExtra("videos", videoList);
 		    		musicServiceIntent.putExtra("artist", artist);
 		    		bindService(musicServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);*/
-	    		}
+	    		//}*/
 	    		
 		    	musicServiceBroadcastReceiver = new MusicServiceBroadcastReceiver();
 		    	IntentFilter filter = new IntentFilter(MusicService.UPDATE_PLAYLIST);
@@ -1106,9 +1122,16 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 			  unregisterReceiver(musicServiceBroadcastReceiver);
 			  musicServiceBroadcastReceiver = null;
 		  }
+		  
+		 if(mBound) {
+			 //unbindService(serviceConnection);
+		 }
+
 	    
 	    
 	    super.onPause();
+	    
+	    
 	    if(mReceiver != null) {
 			mReceiver.setReceiver(null);
 	    }
@@ -1163,6 +1186,18 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	 @Override
 	 protected void onDestroy() {
 		 super.onDestroy();
+		 
+		 if(musicServiceBroadcastReceiver != null) {
+			 unregisterReceiver(musicServiceBroadcastReceiver);
+			 musicServiceBroadcastReceiver = null;
+		 }
+		 
+/*		 if(mBound) {
+			 unbindService(serviceConnection);
+		 }*/
+
+		 
+		 
 	  	//unregisterReceiver(playlistReceiver);
 	 }
 
@@ -1173,7 +1208,9 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		switch (v.getId()) {
 		
 		case R.id.playButton:
-			if(player != null && paused) {
+			if(musicService != null && !musicService.isPlaying()) {
+				Log.d(TAG, "PLAY BUTTON CLICKED. AWW YISS.");
+
 				/*player.start();
 				pauseButton.setVisibility(View.VISIBLE);
 				playButton.setVisibility(View.GONE);*/
@@ -1187,10 +1224,10 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 			break;
 			
 		case R.id.pauseButton:
-			if(!paused && player != null) {
-				
+			if(musicService != null && musicService.isPlaying()) {
+				Log.d(TAG, "PAUSE BUTTON CLICKED. AWW YISS.");
 				Intent pauseTrackIntent = new Intent(PAUSE_TRACK);
-				//this.sendBroadcast(pauseTrackIntent);
+				this.sendBroadcast(pauseTrackIntent);
 				updatePlayPauseButtonState();
 				
 				//player.pause();
@@ -1205,6 +1242,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 				//releasePlayer();
 			}
 			
+			Log.d(TAG, "NEXT TRACK CLICKED. HELL YES.");
 			Intent nextTrackIntent = new Intent(NEXT_TRACK);
 			this.sendBroadcast(nextTrackIntent);
 			
@@ -1410,13 +1448,18 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		@Override
 		public void onServiceConnected(ComponentName className, IBinder baBinder) {
 			// TODO Auto-generated method stub
-			Log.d("PlaylistActivity", "MusicServiceConnection: Service connected");
+			Log.d(TAG, "MusicServiceConnection: Service connected");
 			musicService = ((MusicService.MusicServiceBinder) baBinder).getService();
 			MusicService.setMainActivity(PlaylistActivity.this);
     		musicServiceIntent.putExtra("videos", videoList);
 			startService(musicServiceIntent);
 			
-			musicService.playCurrentSong();
+			mBound = true;
+			
+			
+			if(!musicService.isPlaying() && videoList.size() > 0) {
+				musicService.playCurrentSong();
+			}
 			
 		}
 
@@ -1426,6 +1469,9 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 			Log.d(TAG, "ServiceConnection: Service disconnected.");
 			
 			musicService = null;
+			serviceConnection = null;
+			
+			mBound = false;
 			//startService(musicServiceIntent);
 		}
     	
@@ -1510,6 +1556,16 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		}
 		
 		
+	}
+	
+	private boolean isMyServiceRunning() {
+	    ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+	    for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+	        if (MusicService.class.getName().equals(service.service.getClassName())) {
+	            return true;
+	        }
+	    }
+	    return false;
 	}
 	
 	

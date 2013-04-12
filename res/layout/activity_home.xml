@@ -32,6 +32,8 @@
             android:onClick="onClick"
             android:background="@drawable/selector_with_transparency"               
             android:paddingLeft="16dp"
+            android:singleLine="true"
+            android:ellipsize="end"
             android:text="Artist Name Here"
             android:textColor="#fff" />
 

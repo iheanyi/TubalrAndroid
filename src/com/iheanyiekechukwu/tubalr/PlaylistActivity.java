@@ -244,7 +244,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		
 		currentTextView = (TextView) findViewById(R.id.currentTextView);
 		
-		Typeface bolded = Typeface.createFromAsset(context.getAssets(), "fonts/Roboto-Regular.ttf");
+		Typeface bolded = Typeface.createFromAsset(context.getAssets(), "fonts/Roboto-Medium.ttf");
 		Typeface light = Typeface.createFromAsset(context.getAssets(), "fonts/Roboto-Light.ttf");
 		currentTextView.setTypeface(bolded);
 		maxText.setTypeface(light);
@@ -714,7 +714,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
     		}*/
     		
     		
-    		Typeface bolded = Typeface.createFromAsset(context.getAssets(), "fonts/Roboto-Medium.ttf");
+    		Typeface bolded = Typeface.createFromAsset(context.getAssets(), "fonts/Roboto-Regular.ttf");
 
     		item.songTextView.setText(myText);
         	item.songTextView.setTextColor(Color.WHITE);

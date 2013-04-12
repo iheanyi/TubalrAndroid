@@ -72,17 +72,19 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 
     private static final String YOUTUBE_VIDEO_URL = "https://youtube.com/watch?v=";
 
-	private MediaPlayer mMediaPlayer;
-	private ArrayList<VideoClass> videoList;
-	private boolean paused = false;
+	private static MediaPlayer mMediaPlayer;
+	private static ArrayList<VideoClass> videoList;
+	private static boolean paused = false;
 	private MusicServiceBroadcastReceiver broadcastReceiver = new MusicServiceBroadcastReceiver();
 	
     private final static String TAG = "MusicService";
-    private int current = 0;
+    private static int current = 0;
     private final Handler handler = new Handler();
 
     private static PlaylistActivity myActivity;
     private static HomeActivity homeActivity;
+    
+    private static Context context;
     
     private NotificationManager mNotificationManager;
     private Notification notification;
@@ -111,6 +113,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		intentFilter.addAction(NEW_SONGS);
 		registerReceiver(broadcastReceiver, intentFilter);
 		
+		context = getApplicationContext();
 		
 		/*mMediaPlayer = new MediaPlayer();
 		mMediaPlayer.setOnBufferingUpdateListener(this);
@@ -285,16 +288,51 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		myActivity = mainActivity;
 		
 		final ImageButton playButton = (ImageButton) myActivity.findViewById(R.id.playButton);
-		playButton.setOnClickListener(myActivity);
+		//playButton.setOnClickListener(MusicService);
 		
 		final ImageButton pauseButton = (ImageButton) myActivity.findViewById(R.id.pauseButton);
-		pauseButton.setOnClickListener(myActivity);
+		//pauseButton.setOnClickListener(this);
 		
 		final ImageButton nextButton = (ImageButton) myActivity.findViewById(R.id.nextButton);
 		nextButton.setOnClickListener(myActivity);
 		
 		final ImageButton prevButton = (ImageButton) myActivity.findViewById(R.id.previousButton);
 		prevButton.setOnClickListener(myActivity);
+		
+		if(isPlaying()) {
+			playButton.setVisibility(View.GONE);
+			pauseButton.setVisibility(View.VISIBLE);
+			
+			playButton.setOnClickListener(new OnClickListener() {
+
+				@Override
+				public void onClick(View arg0) {
+					// TODO Auto-generated method stub
+					if(mMediaPlayer != null && !(mMediaPlayer.isPlaying())) {
+						mMediaPlayer.start();
+						paused = false;
+						pauseButton.setVisibility(View.VISIBLE);
+						playButton.setVisibility(View.GONE);
+					}
+				}
+				
+			});
+			
+			pauseButton.setOnClickListener(new OnClickListener() {
+
+				@Override
+				public void onClick(View arg0) {
+					// TODO Auto-generated method stub
+					if(mMediaPlayer.isPlaying() && mMediaPlayer != null) {
+						pause();
+						pauseButton.setVisibility(View.GONE);
+						playButton.setVisibility(View.VISIBLE);
+					}
+				}
+				
+			});		
+			
+		}
 		
 		
 		
@@ -318,6 +356,44 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		
 		final ImageButton prevButton = (ImageButton) homeActivity.findViewById(R.id.homePrevButton);
 		prevButton.setOnClickListener(homeActivity);
+		
+		final TextView currentText = (TextView) homeActivity.findViewById(R.id.artistNameText);
+		currentText.setText(videoList.get(current).getTitle());
+		
+		if(isPlaying()) {
+			playButton.setVisibility(View.GONE);
+			pauseButton.setVisibility(View.VISIBLE);
+			
+			playButton.setOnClickListener(new OnClickListener() {
+
+				@Override
+				public void onClick(View arg0) {
+					// TODO Auto-generated method stub
+					if(mMediaPlayer != null && !(mMediaPlayer.isPlaying())) {
+						mMediaPlayer.start();
+						paused = false;
+						pauseButton.setVisibility(View.VISIBLE);
+						playButton.setVisibility(View.GONE);
+					}
+				}
+				
+			});
+			
+			pauseButton.setOnClickListener(new OnClickListener() {
+
+				@Override
+				public void onClick(View arg0) {
+					// TODO Auto-generated method stub
+					if(mMediaPlayer.isPlaying() && mMediaPlayer != null) {
+						pause();
+						pauseButton.setVisibility(View.GONE);
+						playButton.setVisibility(View.VISIBLE);
+					}
+				}
+				
+			});		
+			
+		}
 
 		
 		
@@ -579,7 +655,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		release();
 	}
 	
-	public boolean isPlaying() {
+	public static boolean isPlaying() {
 		if(current > 40 || mMediaPlayer == null) {
 			Log.v(TAG, "I'm guessing that mMediaPlayer is null");
 			return false;
@@ -592,7 +668,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		return current;
 	}
 	
-	public void pause() {
+	public static void pause() {
 		if(mMediaPlayer.isPlaying()) {
 			mMediaPlayer.pause();
 			paused = true;

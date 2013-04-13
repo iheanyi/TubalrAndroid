@@ -9,10 +9,10 @@
         android:id="@+id/homeFixedListView"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/controlLayout"
-        android:layout_below="@android:id/tabhost"
         android:layout_weight="1"
+        android:layout_alignParentTop="true"
         android:textColor="@color/white" >
+
     </ListView>
 
     <LinearLayout

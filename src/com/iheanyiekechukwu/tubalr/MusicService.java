@@ -162,7 +162,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		//notificationManager.notify(0, notification);
 	}
 	
-	private String getTimeString(long millis) {
+	private static String getTimeString(long millis) {
 		StringBuffer buf = new StringBuffer();
 		
 		int hours =(int) millis/(1000*60*60);
@@ -299,6 +299,8 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		final ImageButton prevButton = (ImageButton) myActivity.findViewById(R.id.previousButton);
 		prevButton.setOnClickListener(myActivity);
 		
+		
+		
 		if(isPlaying()) {
 			playButton.setVisibility(View.GONE);
 			pauseButton.setVisibility(View.VISIBLE);
@@ -336,6 +338,70 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		
 		
 		
+	}
+	
+	public void updateTime() {
+		//playlistUpdated();
+		
+		
+		final TextView currentText = (TextView) myActivity.findViewById(R.id.currentTextView);
+		currentText.setText(videoList.get(current).getTitle());
+		final ImageView imageView = (ImageView) myActivity.findViewById(R.id.videoImageView);
+		
+		UrlImageViewHelper.setUrlDrawable(imageView, videoList.get(current).getImageURL(), R.drawable.tubalr_icon);
+		
+
+		final SeekBar songSeek = (SeekBar) myActivity.findViewById(R.id.songSeekBar);
+		final TextView timeText = (TextView) myActivity.findViewById(R.id.timeText);
+		final TextView maxText = (TextView) myActivity.findViewById(R.id.maxText);
+		
+		songSeek.setMax(mMediaPlayer.getDuration());
+		songSeek.setProgress(mMediaPlayer.getCurrentPosition());
+		songSeek.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
+
+			@Override
+			public void onProgressChanged(SeekBar seekBar, int progress,
+					boolean fromUser) {
+				// TODO Auto-generated method stub
+				
+				
+				final TextView timeText = (TextView) myActivity.findViewById(R.id.timeText);
+
+				int secondaryPosition = seekBar.getSecondaryProgress();
+				if(fromUser && mMediaPlayer != null) {
+					if(progress > secondaryPosition) {
+						mMediaPlayer.seekTo(progress);
+			            //String time = String.format("%d:%d", TimeUnit.MILLISECONDS.toMinutes(player.getDuration()), TimeUnit.MILLISECONDS.toSeconds(player.getDuration()) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(player.getDuration())));
+						timeText.setText(getTimeString(seekBar.getProgress()));
+					}
+				}
+
+				else {
+		            //String time = String.format("%d:%d", TimeUnit.MILLISECONDS.toMinutes(player.getDuration()), TimeUnit.MILLISECONDS.toSeconds(player.getDuration()) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(player.getDuration())));
+					seekBar.setProgress(progress);
+					timeText.setText(getTimeString(seekBar.getProgress()));
+				}
+				
+			}
+
+			@Override
+			public void onStartTrackingTouch(SeekBar seekBar) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void onStopTrackingTouch(SeekBar seekBar) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		timeText.setText(getTimeString(songSeek.getProgress()));
+		maxText.setText(getTimeString(mMediaPlayer.getDuration()));
+
+		playlistUpdated();
+		startPlayProgressUpdater();
 	}
 	
 	public static void updateButtons() {
@@ -529,6 +595,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 
         if((ArrayList<VideoClass>) intent.getSerializableExtra("videos") != null) {
             videoList = (ArrayList<VideoClass>) intent.getSerializableExtra("videos");
+            release();
         }
         
         if(broadcastReceiver == null) {
@@ -851,6 +918,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 				play(position);
 				
 			} else if(NEW_SONGS.equals(action)) {
+				current = 0;
 				ArrayList<VideoClass> newSongs = (ArrayList<VideoClass>) intent.getSerializableExtra("videos");
 				Log.v(TAG, "New Songs registered . . . ");
 				Log.v(TAG, "New Playlist Size: "  + Integer.toString(newSongs.size()));
@@ -917,6 +985,9 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		}
 		
 		else {
+			
+			Toast.makeText(getBaseContext(), "Error parsing music . . . skipping track.", Toast.LENGTH_SHORT).show();
+			nextTrack();
 			id = "error";
 		}
 		
@@ -999,6 +1070,9 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		        play();
 	
 			}
+		} else {
+			Toast.makeText(getBaseContext(), "Error playing track, next track called.", Toast.LENGTH_SHORT).show();
+			nextTrack();
 		}
 		
 	}

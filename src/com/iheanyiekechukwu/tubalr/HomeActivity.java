@@ -264,14 +264,15 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
     	    				controlLayout.setVisibility(View.VISIBLE);
     	    			}
     	    			
-    	    			
+		    			MusicService.setMainActivity(HomeActivity.this);
+
     		    		if(musicServiceIntent == null) {
-    		    			MusicService.setMainActivity(HomeActivity.this);
     		    			musicServiceIntent = new Intent(this, MusicService.class);
 
-    			    		bindService(musicServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
     		    		}
     		    		
+			    		bindService(musicServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+
     		    		
     	    			
     			    	musicServiceBroadcastReceiver = new MusicServiceBroadcastReceiver();
@@ -374,6 +375,8 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 
     public void onItemClick(AdapterView<?> adapter, View v, int id, long arg3) {
        // TODO Auto-generated method stub
+    	
+    	showToast();
         		
     }
 
@@ -701,6 +704,13 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
           
           		case R.id.artistNameText:
           			
+          			if(mBound) {
+          				Intent playlistIntent = new Intent(this, PlaylistActivity.class);
+          				playlistIntent.putExtra("videos", musicService.getVideos());
+          				playlistIntent.putExtra("new", false);
+          				startActivityForResult(playlistIntent, 1);
+          				
+          			}
           			break;                                   
                 
         		case R.id.homeNextButton:
@@ -770,6 +780,8 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 	    	
 	    	
 	    	default:
+	    		
+	    		showToast();
 	    		return super.onOptionsItemSelected(item);
     	}
     }
@@ -813,7 +825,8 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 			        i.putExtra("artist", s_artist);
 			        i.putExtra("new", true);
 			        
-			        if(mBound) {
+			        if(mBound && musicService != null) {
+			        	//musicService.stop();
 			        	unbindService(serviceConnection);
 			        }
 			        startActivityForResult(i, 1);
@@ -858,6 +871,7 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 			        
 			        
 			        if(mBound) {
+			        	musicService.stop();
 			        	unbindService(serviceConnection);
 			        }
 			        
@@ -990,6 +1004,10 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 
 		  //registerReceiver(playlistReceiver, intentFilter);
 	  }
+    
+    public void showToast() {
+    	Toast.makeText(this, "Working on this feature still, try searching for something! Sorry!", Toast.LENGTH_SHORT).show();
+    }
     
     public void onPause() {
 	    //super.onPause();

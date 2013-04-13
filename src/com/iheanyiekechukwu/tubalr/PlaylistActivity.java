@@ -128,6 +128,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
     private SurfaceView vidV;
     private SurfaceHolder sh;
     
+    private boolean newInstance;
     private String artist;    
     
     private Boolean paused = false;
@@ -208,7 +209,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		String url = intent.getExtras().getString("url");
 		String type = intent.getExtras().getString("type");
 		String name = intent.getExtras().getString("artist");
-		boolean newInstance = intent.getExtras().getBoolean("new");
+		newInstance = intent.getExtras().getBoolean("new");
 		
 		timeText = (TextView) findViewById(R.id.timeText);
 		maxText = (TextView) findViewById(R.id.maxText);
@@ -227,13 +228,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		prevButton.setOnClickListener(this);
 		//shuffleButton.setOnClickListener(this);
 		
-		mReceiver = new MyResultReceiver(new Handler());
-		mReceiver.setReceiver(this);
-		
 
-		
-		IntentFilter intentFilter = new IntentFilter();
-		intentFilter.addAction(PlaylistService.TRANSACTION_DONE);
 		
 		listDivider = (View) findViewById(R.id.listDivider);
 		listDivider.setBackgroundDrawable(d);
@@ -250,34 +245,11 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		maxText.setTypeface(light);
 		timeText.setTypeface(light);
 		
+
+		
 		videoImageView = (ImageView) findViewById(R.id.videoImageView);
 		
-		videoList = new ArrayList<VideoClass>();
-		Intent i = new Intent(this, PlaylistService.class);
-	    i.putExtra("url", url);
-	    i.putExtra("type", type);
-	    i.putExtra("artist", name);
-	    i.putExtra("rec", mReceiver);
-	    startService(i);
-			
-		pd = ProgressDialog.show(this, "Building Playlist", "Finding Songs Relevant For Query: " + name);
-		pd.setCancelable(true);
 
-		//videoList = new ArrayList<VideoClass>();
-		
-		Log.v(TAG, "onCreate() method junts");
-		//registerReceiver(playlistReceiver, intentFilter);
-		
-		//playButton.setBackgroundColor(Color.TRANSPARENT);
-		//pauseButton.setBackgroundColor(Color.TRANSPARENT);
-		
-		
-		playlistView = (ListView) findViewById(R.id.playlistView);
-		adapter = new PlaylistAdapter(this, R.layout.basicitem, videoList);
-		playlistStringAdapter = new ArrayAdapter<VideoClass>(context, android.R.layout.simple_list_item_1, videoList);
-		playlistView.setAdapter(adapter);
-		
-		playlistView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 		
 		songSeek = (SeekBar) findViewById(R.id.songSeekBar);
 		
@@ -321,6 +293,88 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 
         
         Log.d("LOC", "In Playlist Activity now");
+        
+		if(newInstance) {
+			
+			videoList = new ArrayList<VideoClass>();
+
+			//videoList = new ArrayList<VideoClass>();
+			
+			Log.v(TAG, "onCreate() method junts");
+			//registerReceiver(playlistReceiver, intentFilter);
+			
+			//playButton.setBackgroundColor(Color.TRANSPARENT);
+			//pauseButton.setBackgroundColor(Color.TRANSPARENT);
+			
+			
+			playlistView = (ListView) findViewById(R.id.playlistView);
+	        playlistView.setSelector(R.drawable.highlight_selector);
+			adapter = new PlaylistAdapter(this, R.layout.basicitem, videoList);
+			playlistStringAdapter = new ArrayAdapter<VideoClass>(context, android.R.layout.simple_list_item_1, videoList);
+			playlistView.setAdapter(adapter);
+			
+			playlistView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+			
+			mReceiver = new MyResultReceiver(new Handler());
+			mReceiver.setReceiver(this);
+			
+
+			
+			IntentFilter intentFilter = new IntentFilter();
+			intentFilter.addAction(PlaylistService.TRANSACTION_DONE);
+			
+			Intent i = new Intent(this, PlaylistService.class);
+		    i.putExtra("url", url);
+		    i.putExtra("type", type);
+		    i.putExtra("artist", name);
+		    i.putExtra("rec", mReceiver);
+		    startService(i);
+		    
+		    
+				
+			pd = ProgressDialog.show(this, "Building Playlist", "Finding Songs Relevant For Query: " + name);
+			pd.setCancelable(true);
+		} else {
+			
+			videoList = (ArrayList<VideoClass>) intent.getSerializableExtra("videos");
+
+			//videoList = new ArrayList<VideoClass>();
+			
+			Log.v(TAG, "onCreate() method junts");
+			//registerReceiver(playlistReceiver, intentFilter);
+			
+			//playButton.setBackgroundColor(Color.TRANSPARENT);
+			//pauseButton.setBackgroundColor(Color.TRANSPARENT);
+			
+			
+			playlistView = (ListView) findViewById(R.id.playlistView);
+	        playlistView.setSelector(R.drawable.highlight_selector);
+			adapter = new PlaylistAdapter(this, R.layout.basicitem, videoList);
+			playlistStringAdapter = new ArrayAdapter<VideoClass>(context, android.R.layout.simple_list_item_1, videoList);
+			playlistView.setAdapter(adapter);
+			adapter.notifyDataSetChanged();
+			
+			playlistView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+			
+    		if(musicServiceIntent == null) {
+    			MusicService.setMainActivity(PlaylistActivity.this);
+    			musicServiceIntent = new Intent(this, MusicService.class);
+	    		musicServiceIntent.putExtra("videos", videoList);
+	    		bindService(musicServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+    		}
+    		
+	    	/*musicServiceBroadcastReceiver = new MusicServiceBroadcastReceiver();
+	    	IntentFilter filter = new IntentFilter(MusicService.UPDATE_PLAYLIST);
+	    	filter.addAction(MusicService.NEXT_TRACK);
+	    	filter.addAction(MusicService.PREV_TRACK);
+	    	filter.addAction(MusicService.PAUSE_TRACK);
+	    	filter.addAction(MusicService.PLAY_SELECT);
+	    	filter.addAction(MusicService.NEW_SONGS);
+	    	registerReceiver(musicServiceBroadcastReceiver, filter);*/
+	    	
+//			musicService.updateTime();
+
+		}
        
 		
 		
@@ -420,9 +474,10 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
     		showSearchDialog("Please enter an artist's name");
     		return true;
     		
+		default:
+			showToast();
+    		
 		}
-		
-	
 			
 		return super.onOptionsItemSelected(item);
 	}
@@ -1065,7 +1120,13 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	    		playlistView.setAdapter(adapter);
 	    		
 	    		playlistView.setOnItemClickListener(this);
-	    		pd.dismiss();
+	    		
+	    		if(pd.isShowing()) {
+		    		pd.dismiss();
+	    		}
+	    		
+	    		Toast.makeText(getBaseContext(), "New Playlist Generated! Attempting to play first song. ", Toast.LENGTH_SHORT).show();
+	    		
 	    		adapter.notifyDataSetChanged();
 	    		
 	    		//serviceConnection = new MusicServiceConnection();
@@ -1076,10 +1137,14 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		    		musicServiceIntent.putExtra("videos", videoList);
 		    		musicServiceIntent.putExtra("artist", artist);
 		    		bindService(musicServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+		    		
+	    			Intent newSongIntent = new Intent(NEW_SONGS);
+	    			newSongIntent.putExtra("videos", videoList);
+	    			this.sendBroadcast(newSongIntent);
 	    		}
 	    		
 			  
-	    		/*else {
+	    		else {
 	    			
 	    			Intent newSongIntent = new Intent(NEW_SONGS);
 	    			newSongIntent.putExtra("videos", videoList);
@@ -1092,16 +1157,16 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		    		musicServiceIntent.putExtra("videos", videoList);
 		    		musicServiceIntent.putExtra("artist", artist);
 		    		bindService(musicServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);*/
-	    		//}*/
+	    		}
 	    		
-		    	musicServiceBroadcastReceiver = new MusicServiceBroadcastReceiver();
+		    	/*musicServiceBroadcastReceiver = new MusicServiceBroadcastReceiver();
 		    	IntentFilter filter = new IntentFilter(MusicService.UPDATE_PLAYLIST);
 		    	filter.addAction(MusicService.NEXT_TRACK);
 		    	filter.addAction(MusicService.PREV_TRACK);
 		    	filter.addAction(MusicService.PAUSE_TRACK);
 		    	filter.addAction(MusicService.PLAY_SELECT);
 		    	filter.addAction(MusicService.NEW_SONGS);
-		    	registerReceiver(musicServiceBroadcastReceiver, filter);	
+		    	registerReceiver(musicServiceBroadcastReceiver, filter);*/
 	    		
 
 	            // do something interesting
@@ -1151,9 +1216,12 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	  public void onResume() {
 		  super.onResume();
 		  
+		  
+		  
 		  //musicServiceIntent = new Intent(this, MusicService.class);
 		  //bindService(musicServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 		  
+
 		  musicServiceBroadcastReceiver = new MusicServiceBroadcastReceiver();
   		  IntentFilter filter = new IntentFilter(MusicService.UPDATE_PLAYLIST);
   		  filter.addAction(MusicService.NEXT_TRACK);
@@ -1266,6 +1334,9 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	private void showSearchDialog(String message) {
 		// TODO Auto-generated method stub
 		
+		mReceiver = new MyResultReceiver(new Handler());
+		mReceiver.setReceiver(this);
+		
 		String url, artist, search, type = "";
 		AlertDialog.Builder alert = new AlertDialog.Builder(this);
 		
@@ -1303,6 +1374,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 					}
 					
 					Toast.makeText(getBaseContext(), "Building new playlist . . . ", Toast.LENGTH_LONG).show();
+
 
 					
 					Intent i = new Intent(getBaseContext(), PlaylistService.class);
@@ -1461,6 +1533,11 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 				musicService.playCurrentSong();
 			}
 			
+			if(!newInstance) {
+				musicService.updateTime();
+				updatePlayPanel(musicService.getCurrentVideo());
+			}
+			
 		}
 
 		@Override
@@ -1567,6 +1644,10 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	    }
 	    return false;
 	}
+	
+    public void showToast() {
+    	Toast.makeText(this, "Working on this feature still, try searching for something! Sorry!", Toast.LENGTH_SHORT).show();
+    }
 	
 	
 	

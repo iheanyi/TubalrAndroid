@@ -110,6 +110,7 @@
 
             <ImageButton
                 android:id="@+id/shuffleButton"
+                android:visibility="invisible"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -171,6 +172,7 @@
 
             <ImageButton
                 android:id="@+id/addButton"
+                android:visibility="invisible"
                 android:background="@drawable/selector_with_transparency"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"

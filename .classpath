@@ -10,6 +10,5 @@
 	<classpathentry kind="lib" path="/Library"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/library"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ImageViewHelper"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

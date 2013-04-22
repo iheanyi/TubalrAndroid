@@ -10,5 +10,6 @@
 	<classpathentry kind="lib" path="/Library"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/library"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ImageViewHelper"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/viewlibrary"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

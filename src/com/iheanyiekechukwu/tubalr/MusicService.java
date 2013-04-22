@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -82,7 +83,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
     private final Handler handler = new Handler();
 
     private static PlaylistActivity myActivity;
-    private static HomeActivity homeActivity;
+    private static MainActivity homeActivity;
     
     private static Context context;
     
@@ -131,7 +132,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 				
 				if(mp.isPlaying()) {
 					//songSeek.setProgress(mp.getCurrentPosition());
-					timeText.setText(getTimeString(songSeek.getProgress()));	
+					//timeText.setText(getTimeString(songSeek.getProgress()));	
 				}	
 			}
 
@@ -208,8 +209,8 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
                 };
                 
                 handler.postDelayed(notification,1000);
-            } else{
-                mMediaPlayer.pause();
+            } else {
+                pause();
                 //songSeek.setProgress(0);
             }
     	}
@@ -282,10 +283,10 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		
 	}
 	
-	public static void  setMainActivity(PlaylistActivity mainActivity) {
+	public static void  setMainActivity(PlaylistActivity playlistActivity) {
 		
 		Log.v(TAG, "SETMAINACTIVITY CALLED.");
-		myActivity = mainActivity;
+		myActivity = playlistActivity;
 		
 		final ImageButton playButton = (ImageButton) myActivity.findViewById(R.id.playButton);
 		//playButton.setOnClickListener(MusicService);
@@ -315,6 +316,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 						paused = false;
 						pauseButton.setVisibility(View.VISIBLE);
 						playButton.setVisibility(View.GONE);
+						
 					}
 				}
 				
@@ -344,6 +346,13 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		//playlistUpdated();
 		
 		
+		
+		final ImageButton playButton = (ImageButton) myActivity.findViewById(R.id.playButton);
+		final ImageButton pauseButton = (ImageButton) myActivity.findViewById(R.id.pauseButton);
+		
+		playButton.setOnClickListener(this);
+		pauseButton.setOnClickListener(this);
+		
 		final TextView currentText = (TextView) myActivity.findViewById(R.id.currentTextView);
 		currentText.setText(videoList.get(current).getTitle());
 		final ImageView imageView = (ImageView) myActivity.findViewById(R.id.videoImageView);
@@ -354,6 +363,8 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		final SeekBar songSeek = (SeekBar) myActivity.findViewById(R.id.songSeekBar);
 		final TextView timeText = (TextView) myActivity.findViewById(R.id.timeText);
 		final TextView maxText = (TextView) myActivity.findViewById(R.id.maxText);
+		if(mMediaPlayer != null) {
+			
 		
 		songSeek.setMax(mMediaPlayer.getDuration());
 		songSeek.setProgress(mMediaPlayer.getCurrentPosition());
@@ -399,9 +410,12 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		});
 		timeText.setText(getTimeString(songSeek.getProgress()));
 		maxText.setText(getTimeString(mMediaPlayer.getDuration()));
+		
+		
 
 		playlistUpdated();
 		startPlayProgressUpdater();
+		}
 	}
 	
 	public static void updateButtons() {
@@ -460,73 +474,20 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 			if(isPlaying()) {
 				playButton.setVisibility(View.GONE);
 				pauseButton.setVisibility(View.VISIBLE);
+						
 				
-				playButton.setOnClickListener(new OnClickListener() {
-
-					@Override
-					public void onClick(View arg0) {
-						// TODO Auto-generated method stub
-						if(mMediaPlayer != null && !(mMediaPlayer.isPlaying())) {
-							mMediaPlayer.start();
-							paused = false;
-							pauseButton.setVisibility(View.VISIBLE);
-							playButton.setVisibility(View.GONE);
-						}
-					}
-					
-				});
-				
-				pauseButton.setOnClickListener(new OnClickListener() {
-
-					@Override
-					public void onClick(View arg0) {
-						// TODO Auto-generated method stub
-						if(mMediaPlayer.isPlaying() && mMediaPlayer != null) {
-							pause();
-							pauseButton.setVisibility(View.GONE);
-							playButton.setVisibility(View.VISIBLE);
-						}
-					}
-					
-				});		
+			} else {
+				pauseButton.setVisibility(View.GONE);
+				playButton.setVisibility(View.VISIBLE);
 				
 			}
-		}
-
-	}
-	
-	public static void setMainActivity(HomeActivity hActivity) {
-		
-		Log.v(TAG, "SETMAINACTIVITY CALLED FOR HOME ACTIVITY.");
-
-		homeActivity = hActivity;
-		myActivity = null;
-		
-		final ImageButton playButton = (ImageButton) homeActivity.findViewById(R.id.homePlayButton);
-		playButton.setOnClickListener(homeActivity);
-		
-		final ImageButton pauseButton = (ImageButton) homeActivity.findViewById(R.id.homePauseButton);
-		pauseButton.setOnClickListener(homeActivity);
-		
-		final ImageButton nextButton = (ImageButton) homeActivity.findViewById(R.id.homeNextButton);
-		nextButton.setOnClickListener(homeActivity);
-		
-		final ImageButton prevButton = (ImageButton) homeActivity.findViewById(R.id.homePrevButton);
-		prevButton.setOnClickListener(homeActivity);
-		
-		final TextView currentText = (TextView) homeActivity.findViewById(R.id.artistNameText);
-		currentText.setText(videoList.get(current).getTitle());
-		
-		if(isPlaying()) {
-			playButton.setVisibility(View.GONE);
-			pauseButton.setVisibility(View.VISIBLE);
 			
 			playButton.setOnClickListener(new OnClickListener() {
 
 				@Override
 				public void onClick(View arg0) {
 					// TODO Auto-generated method stub
-					if(mMediaPlayer != null && !(mMediaPlayer.isPlaying())) {
+					if(mMediaPlayer != null && paused) {
 						mMediaPlayer.start();
 						paused = false;
 						pauseButton.setVisibility(View.VISIBLE);
@@ -541,16 +502,82 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 				@Override
 				public void onClick(View arg0) {
 					// TODO Auto-generated method stub
-					if(mMediaPlayer.isPlaying() && mMediaPlayer != null) {
+					if(!paused && mMediaPlayer != null) {
 						pause();
 						pauseButton.setVisibility(View.GONE);
 						playButton.setVisibility(View.VISIBLE);
 					}
 				}
 				
-			});		
+			});
+		}
+
+	}
+	
+	public static void setMainActivity(MainActivity hActivity) {
+		
+		Log.v(TAG, "SETMAINACTIVITY CALLED FOR HOME ACTIVITY.");
+
+		homeActivity = hActivity;
+		myActivity = null;
+		
+		final ImageButton playButton = (ImageButton) homeActivity.findViewById(R.id.homePlayButton);
+		//playButton.setOnClickListener(homeActivity);
+		
+		final ImageButton pauseButton = (ImageButton) homeActivity.findViewById(R.id.homePauseButton);
+		//pauseButton.setOnClickListener(homeActivity);
+		
+		final ImageButton nextButton = (ImageButton) homeActivity.findViewById(R.id.homeNextButton);
+		nextButton.setOnClickListener(homeActivity);
+		
+		final ImageButton prevButton = (ImageButton) homeActivity.findViewById(R.id.homePrevButton);
+		prevButton.setOnClickListener(homeActivity);
+
+		if(videoList != null) {
+			final TextView currentText = (TextView) homeActivity.findViewById(R.id.artistNameText);
+			currentText.setText(videoList.get(current).getTitle());
+		}
+
+		
+		if(isPlaying()) {
+			playButton.setVisibility(View.GONE);
+			pauseButton.setVisibility(View.VISIBLE);
+					
+			
+		} else {
+			pauseButton.setVisibility(View.GONE);
+			playButton.setVisibility(View.VISIBLE);
 			
 		}
+		
+		playButton.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View arg0) {
+				// TODO Auto-generated method stub
+				if(mMediaPlayer != null && paused) {
+					mMediaPlayer.start();
+					paused = false;
+					pauseButton.setVisibility(View.VISIBLE);
+					playButton.setVisibility(View.GONE);
+				}
+			}
+			
+		});
+		
+		pauseButton.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View arg0) {
+				// TODO Auto-generated method stub
+				if(!paused && mMediaPlayer != null) {
+					pause();
+					pauseButton.setVisibility(View.GONE);
+					playButton.setVisibility(View.VISIBLE);
+				}
+			}
+			
+		});
 
 		
 		
@@ -613,8 +640,12 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		
 		
 		if(homeActivity != null) {
-			final TextView currentText = (TextView) homeActivity.findViewById(R.id.artistNameText);
-			currentText.setText(videoList.get(current).getTitle());
+			
+			if(videoList != null) {
+				final TextView currentText = (TextView) homeActivity.findViewById(R.id.artistNameText);
+				currentText.setText(videoList.get(current).getTitle());
+			}
+			
 			
 			final ImageButton pauseButton = (ImageButton) homeActivity.findViewById(R.id.homePauseButton);
 			final ImageButton playButton = (ImageButton) homeActivity.findViewById(R.id.homePlayButton);
@@ -649,6 +680,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 	
 	public void playCurrentSong() {
 		Log.v(TAG, "MusicService: playCurrentSong() called.");
+		stop();
 		
         String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(current).getId();
         YoutubeVideoTask myTask = new YoutubeVideoTask();
@@ -792,10 +824,12 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		
 		Log.v(TAG, "Currently in prevTrack()");
 		
+		if(mMediaPlayer != null) {
+			
 		if(mMediaPlayer.isPlaying() && mMediaPlayer.getCurrentPosition() > 5000) {
 			seek(0);
 		}
-		
+				
 		else {
 			current--;
 			
@@ -806,6 +840,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 			String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(current).getId();
 	        YoutubeVideoTask myTask = new YoutubeVideoTask();
 	        myTask.execute(yt_video_url);
+		}
 		}
 	}
 	
@@ -1089,10 +1124,57 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		}
     	
 		protected void onPostExecute(String result) {
+			
+			String[] results = result.trim().split("var swf = ");
+			
+			results = results[results.length - 1].trim().split("document.getElementById(");
+			String html = results[0];
+			//getURLs(html);
 			decodeURL(result);
 		}
     }
 
+    public void getURLs(String result) {
+    	try {
+			String url = URLDecoder.decode(result, "UTF-8");
+			url = URLDecoder.decode(url, "UTF-8");
+			url = URLDecoder.decode(url, "UTF-8");
+			url = url.replace("\\\\u0026", "&");
+			
+			String[] links = url.trim().split("url_encoded_fmt_stream_map\\\":");
+			String link = links[links.length-1];
+			
+			String[] qualities = link.trim().split("url=");
+			ArrayList<String> qualitiesArray = new ArrayList<String>(Arrays.asList(qualities));
+			qualitiesArray.remove(0);
+			
+			ArrayList<String> cleanURLs = new ArrayList<String>();
+			
+			for(String s : qualitiesArray) {
+				String[] moreLinks = s.split(";+codecs=");
+				String current = moreLinks[0];
+				if(current.contains("video/mp4") || current.contains("video/3gpp")) {
+					String[] tags = current.split("&itag=");
+					String lastTag = tags[tags.length-1];
+					
+					String[] moreURLs = current.split("&itag=" + lastTag);
+					String cleanURL = moreURLs[moreURLs.length - 1];
+					cleanURLs.add(cleanURL);
+					
+				}
+			}
+			
+			String contentDecoded = cleanURLs.get(0);
+			contentDecoded = contentDecoded.replaceAll("sig=", "signature=");
+			contentDecoded = contentDecoded.replaceAll("x-flv", "flv");			
+			
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+    }
+    
 
 
 	@Override
@@ -1146,19 +1228,29 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 			switch (v.getId()) {
 
 			case R.id.playButton:
-				if(mMediaPlayer != null && !(mMediaPlayer.isPlaying())) {
-					mMediaPlayer.start();
-					//paused = false;
-					pauseButton.setVisibility(View.VISIBLE);
-					playButton.setVisibility(View.GONE);
+				if(mMediaPlayer != null) {
+					
+				
+					if(!(mMediaPlayer.isPlaying())) {
+						mMediaPlayer.start();
+						//paused = false;
+						pauseButton.setVisibility(View.VISIBLE);
+						playButton.setVisibility(View.GONE);
+						
+						startPlayProgressUpdater();
+					} 
 				}
 				break;
 
 			case R.id.pauseButton:
-				if(mMediaPlayer.isPlaying() && mMediaPlayer != null) {
-					pause();
-					pauseButton.setVisibility(View.GONE);
-					playButton.setVisibility(View.VISIBLE);
+				if(mMediaPlayer != null) {
+					
+				
+					if(mMediaPlayer.isPlaying()) {
+						pause();
+						pauseButton.setVisibility(View.GONE);
+						playButton.setVisibility(View.VISIBLE);
+					}
 				}
 				break;
 
@@ -1172,19 +1264,29 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 			switch (v.getId()) {
 
 			case R.id.homePlayButton:
-				if(mMediaPlayer != null && !(mMediaPlayer.isPlaying())) {
-					mMediaPlayer.start();
-					//paused = false;
-					pauseButton.setVisibility(View.VISIBLE);
-					playButton.setVisibility(View.GONE);
+				if(mMediaPlayer != null) {
+					
+				
+					if(!(mMediaPlayer.isPlaying())) {
+						mMediaPlayer.start();
+						//paused = false;
+						pauseButton.setVisibility(View.VISIBLE);
+						playButton.setVisibility(View.GONE);
+					}
 				}
 				break;
 
 			case R.id.homePauseButton:
-				if(mMediaPlayer.isPlaying() && mMediaPlayer != null) {
-					pause();
-					pauseButton.setVisibility(View.GONE);
-					playButton.setVisibility(View.VISIBLE);
+				
+				if(mMediaPlayer != null) {
+					
+				
+					if(mMediaPlayer.isPlaying()) {
+						pause();
+						pauseButton.setVisibility(View.GONE);
+						playButton.setVisibility(View.VISIBLE);
+					}
+				
 				}
 				break;
 		} 

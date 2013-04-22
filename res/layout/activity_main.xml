@@ -1,23 +1,111 @@
-<android.support.v4.view.ViewPager xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/pager"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity" >
+    android:layout_width="fill_parent"
+  	android:layout_height="fill_parent"
+  	android:orientation="vertical"
+  	tools:context=".MainActivity" >
+  	
 
-    <!--
-    This title strip will display the currently visible page title, as well as the page
-    titles for adjacent pages.
-    -->
-
-    <android.support.v4.view.PagerTitleStrip
-        android:id="@+id/pager_title_strip"
-        android:layout_width="match_parent"
+    <com.viewpagerindicator.TitlePageIndicator
+        android:id="@+id/indicator"
         android:layout_height="wrap_content"
-        android:layout_gravity="top"
-        android:background="#33b5e5"
-        android:paddingBottom="4dp"
-        android:paddingTop="4dp"
-        android:textColor="#fff" />
+        android:layout_width="fill_parent"
+    />
+	<android.support.v4.view.ViewPager 
+	    android:id="@+id/pager"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	 	android:layout_gravity="top" 
+	 	android:paddingBottom="4dp">
+	
+	    <!--
+	    This title strip will display the currently visible page title, as well as the page
+	    titles for adjacent pages.
+	    -->
+	
+<!-- 	    <android.support.v4.view.PagerTitleStrip
+	        android:id="@+id/pager_title_strip"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:layout_gravity="top"
+	        android:background="#585858"
+	        android:paddingBottom="4dp"
+	        android:paddingTop="4dp"
+	        android:textColor="#fff" /> -->
+	</android.support.v4.view.ViewPager>
+	
+	<LinearLayout
+	    android:id="@+id/controlLayout"
+	    android:layout_width="fill_parent"
+	    android:layout_height="40dp"
+	    android:layout_gravity="bottom"
+	    android:layout_weight="1"
+	    android:background="#000"
+	    android:visibility="visible" >
 
-</android.support.v4.view.ViewPager>
+        <TextView
+            android:id="@+id/artistNameText"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:onClick="onClick"
+            android:background="@drawable/selector_with_transparency"               
+            android:paddingLeft="16dp"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:text="Artist Name Here"
+            android:textColor="#fff" />
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:gravity="right" >
+
+            <ImageButton
+                android:id="@+id/homePrevButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                
+                android:background="@drawable/selector_with_transparency"                
+                android:padding="8dp"
+                android:src="@drawable/player_first" />
+
+            <ImageButton
+                android:id="@+id/homePlayButton"
+                android:layout_weight="1"                
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:background="@drawable/selector_with_transparency"
+                android:padding="8dp"
+                android:src="@drawable/player_play" />
+
+            <ImageButton
+                android:id="@+id/homePauseButton"
+                android:layout_width="0dp"
+               	android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:background="@drawable/selector_with_transparency"               
+                android:src="@drawable/player_pause"
+                android:padding="8dp"              
+                android:visibility="gone" />
+
+            <ImageButton
+                android:id="@+id/homeNextButton"
+                android:layout_weight="1"         
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:background="@drawable/selector_with_transparency"
+                android:padding="8dp"
+                android:src="@drawable/player_last" />
+        </LinearLayout>
+    </LinearLayout>
+	
+
+	
+</LinearLayout>

@@ -8,9 +8,75 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".MainActivity$DummySectionFragment" >
 
-    <TextView
-        android:id="@+id/section_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+    <LinearLayout
+	    android:id="@+id/controlLayout"
+	    android:layout_width="fill_parent"
+	    android:layout_height="40dp"
+	    android:layout_alignParentBottom="true"
+	    android:layout_weight="1"
+	    android:background="#000"
+	    android:visibility="visible" >
+
+        <TextView
+            android:id="@+id/artistNameText"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:onClick="onClick"
+            android:background="@drawable/selector_with_transparency"               
+            android:paddingLeft="16dp"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:text="Artist Name Here"
+            android:textColor="#fff" />
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:gravity="right" >
+
+            <ImageButton
+                android:id="@+id/homePrevButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                
+                android:background="@drawable/selector_with_transparency"                
+                android:padding="8dp"
+                android:src="@drawable/player_first" />
+
+            <ImageButton
+                android:id="@+id/homePlayButton"
+                android:layout_weight="1"                
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:background="@drawable/selector_with_transparency"
+                android:padding="8dp"
+                android:src="@drawable/player_play" />
+
+            <ImageButton
+                android:id="@+id/homePauseButton"
+                android:layout_width="0dp"
+               	android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:background="@drawable/selector_with_transparency"               
+                android:src="@drawable/player_pause"
+                android:padding="8dp"              
+                android:visibility="gone" />
+
+            <ImageButton
+                android:id="@+id/homeNextButton"
+                android:layout_weight="1"         
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:background="@drawable/selector_with_transparency"
+                android:padding="8dp"
+                android:src="@drawable/player_last" />
+        </LinearLayout>
+    </LinearLayout>
 
 </RelativeLayout>

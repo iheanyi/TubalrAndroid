@@ -253,7 +253,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		
 		songSeek = (SeekBar) findViewById(R.id.songSeekBar);
 		
-		songSeek.setOnSeekBarChangeListener(new TimelineChangeListener());
+		//songSeek.setOnSeekBarChangeListener(new TimelineChangeListener());
 
 		//playlistView.setOnItemClickListener(this);
 		
@@ -363,6 +363,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	    		bindService(musicServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
     		}
     		
+    		    		
 	    	/*musicServiceBroadcastReceiver = new MusicServiceBroadcastReceiver();
 	    	IntentFilter filter = new IntentFilter(MusicService.UPDATE_PLAYLIST);
 	    	filter.addAction(MusicService.NEXT_TRACK);
@@ -463,9 +464,10 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 			returnIntent.putExtra("videos", videoList);
 			setResult(RESULT_OK, returnIntent);
 			
-			if(mBound) {
+			if(mBound && serviceConnection != null) {
 				unbindService(serviceConnection);
 			}
+			
 			PlaylistActivity.this.finish();
 			//NavUtils.navigateUpFromSameTask(this);
 			return true;
@@ -1121,8 +1123,10 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	    		
 	    		playlistView.setOnItemClickListener(this);
 	    		
-	    		if(pd.isShowing()) {
-		    		pd.dismiss();
+	    		if(pd != null) {
+	    			if(pd.isShowing()) {
+			    		pd.dismiss();
+	    			}
 	    		}
 	    		
 	    		Toast.makeText(getBaseContext(), "New Playlist Generated! Attempting to play first song. ", Toast.LENGTH_SHORT).show();
@@ -1231,7 +1235,6 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
   		  filter.addAction(MusicService.NEW_SONGS);
   		  registerReceiver(musicServiceBroadcastReceiver, filter);
   		  
-  		  refreshScreen();
   		//registerReceiver(musicServiceBroadcastReceiver, filter);
 		  
 		  //refreshScreen();
@@ -1260,9 +1263,9 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 			 musicServiceBroadcastReceiver = null;
 		 }
 		 
-/*		 if(mBound) {
-			 unbindService(serviceConnection);
-		 }*/
+		 if(mBound) {
+			// unbindService(serviceConnection);
+		 }
 
 		 
 		 
@@ -1372,6 +1375,8 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 						//player.reset();
 						Log.d("SWAG", "Testing junts");
 					}
+					
+
 					
 					Toast.makeText(getBaseContext(), "Building new playlist . . . ", Toast.LENGTH_LONG).show();
 
@@ -1510,7 +1515,9 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
     			Log.d(TAG, "updatePlaylist is called!");
     			//updatePlayQueue();
     			
-    			updatePlayPanel(musicService.getCurrentVideo());
+    			if(musicService != null) {
+        			updatePlayPanel(musicService.getCurrentVideo());
+    			}
     		}
     	}
     }
@@ -1524,12 +1531,15 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 			musicService = ((MusicService.MusicServiceBinder) baBinder).getService();
 			MusicService.setMainActivity(PlaylistActivity.this);
     		musicServiceIntent.putExtra("videos", videoList);
-			startService(musicServiceIntent);
+    		
+    		if(newInstance) {
+    			startService(musicServiceIntent);
+    		}
 			
 			mBound = true;
 			
 			
-			if(!musicService.isPlaying() && videoList.size() > 0) {
+			if(!musicService.isPlaying() && videoList.size() > 0 && newInstance) {
 				musicService.playCurrentSong();
 			}
 			
@@ -1580,7 +1590,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		}, 10, 250);
 	}
 	
-	private class TimelineChangeListener implements OnSeekBarChangeListener {
+	/*private class TimelineChangeListener implements OnSeekBarChangeListener {
 		private Timer delayedSeekTimer;
 
 		@Override
@@ -1633,7 +1643,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		}
 		
 		
-	}
+	}*/
 	
 	private boolean isMyServiceRunning() {
 	    ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);

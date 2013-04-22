@@ -260,11 +260,12 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
     	    			Log.d(TAG, "Activity for Result! RESULT OK!");	
     	    			videos = (ArrayList<VideoClass>) data.getSerializableExtra("videos");
     		    		
+    	    			//serviceConnection = new MusicServiceConnection();
     	    			if(isMyServiceRunning()) {
     	    				controlLayout.setVisibility(View.VISIBLE);
     	    			}
     	    			
-		    			MusicService.setMainActivity(HomeActivity.this);
+		    		//	MusicService.setMainActivity(HomeActivity.this);
 
     		    		if(musicServiceIntent == null) {
     		    			musicServiceIntent = new Intent(this, MusicService.class);
@@ -825,10 +826,11 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 			        i.putExtra("artist", s_artist);
 			        i.putExtra("new", true);
 			        
-			        if(mBound && musicService != null) {
+			        if(mBound && serviceConnection != null && videos.size() != 0) {
 			        	//musicService.stop();
 			        	unbindService(serviceConnection);
 			        }
+			        
 			        startActivityForResult(i, 1);
 				}
 				
@@ -870,8 +872,8 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 			        i.putExtra("new", true);
 			        
 			        
-			        if(mBound) {
-			        	musicService.stop();
+			        if(mBound && serviceConnection != null) {
+			        	//musicService.stop();
 			        	unbindService(serviceConnection);
 			        }
 			        
@@ -910,7 +912,7 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 			musicServiceIntent = new Intent(getApplicationContext(), MusicService.class);
     		//musicServiceIntent.putExtra("videos", videos);
     		//musicServiceIntent.putExtra("artists", s_artist);
-			MusicService.setMainActivity(HomeActivity.this);
+			//MusicService.setMainActivity(HomeActivity.this);
 			
 			mBound = true;
 			
@@ -1032,19 +1034,20 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
     
     public void onDestroy() {
 	    //super.onPause();
+	    super.onDestroy();
+
 	    
 		  if(musicServiceBroadcastReceiver != null) {
 			  unregisterReceiver(musicServiceBroadcastReceiver);
 			  musicServiceBroadcastReceiver = null;
 		  }
 		
-		  if(mBound) {
+/*		  if(mBound && serviceConnection != null) {
 			 unbindService(serviceConnection);
-		  }
+		  }*/
 
 	    
 	    
-	    super.onDestroy();
 	    //unregisterReceiver(playlistReceiver);
 	    //playlistReceiver = null;
 	    

@@ -68,6 +68,13 @@ public class Subreddit extends Fragment {
 		// Inflate the layout for this fragment
 		return inflater.inflate(R.layout.fragment_subreddit, container, false);
 	}
+	
+	@Override
+	public void onSaveInstanceState(Bundle saveInstanceState) {
+		
+		saveInstanceState.putString("BUG_FIX", "BUG_FIX");
+		super.onSaveInstanceState(saveInstanceState);
+	}
 
 	// TODO: Rename method, update argument and hook method into UI event
 

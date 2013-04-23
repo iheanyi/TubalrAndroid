@@ -2,22 +2,19 @@ package com.iheanyiekechukwu.tubalr;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
-import android.widget.ExpandableListAdapter;
-import android.widget.ExpandableListView;
 import android.widget.ListView;
-import android.widget.SimpleExpandableListAdapter;
 
 import com.actionbarsherlock.app.SherlockFragment;
-import com.actionbarsherlock.app.SherlockListFragment;
 
 /**
  * A simple {@link android.support.v4.app.Fragment} subclass. Activities that
@@ -29,13 +26,14 @@ import com.actionbarsherlock.app.SherlockListFragment;
  */
 
 
-public class Genres extends SherlockFragment {
+public class Genres extends SherlockFragment implements OnClickListener, OnItemClickListener {
 	// TODO: Rename parameter arguments, choose names that match
 	// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 	private static final String ARG_PARAM1 = "param1";
 	private static final String ARG_PARAM2 = "param2";
 	public static final String EXTRA_MESSAGE = "EXTRA_MESSAGE";
 
+	private ArrayAdapter<String> allAdapter;
 
 	// TODO: Rename and change types of parameters
 	private String mParam1;
@@ -44,6 +42,7 @@ public class Genres extends SherlockFragment {
     ArrayList<String> groupItem = new ArrayList<String>();
     ArrayList<Object> childItem = new ArrayList<Object>();
 
+    private ArrayList<String> allGenresList;
     private static final String[] topGenres = new String[]{"rock",
 		"electronic",
 		"hip hop",
@@ -543,6 +542,12 @@ public class Genres extends SherlockFragment {
 			mParam2 = getArguments().getString(ARG_PARAM2);
 		}*/
 	}
+	
+	@Override
+	public void onSaveInstanceState(Bundle saveInstanceState) {	
+		saveInstanceState.putString("BUG_FIX", "BUG_FIX");
+		super.onSaveInstanceState(saveInstanceState);
+	}
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -555,7 +560,7 @@ public class Genres extends SherlockFragment {
 		//ViewGroup header = (ViewGroup) inflater.inflate(R.layout.topheader, topList, false);
 		//topList.addHeaderView(header, null, false);
 		
-		ArrayList<String> allGenresList = new ArrayList<String>(Arrays.asList(allGenres));
+		allGenresList = new ArrayList<String>(Arrays.asList(allGenres));
 		java.util.Collections.sort(allGenresList);
 		
 		//ArrayAdapter<String> topAdapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1, topGenres);
@@ -566,8 +571,11 @@ public class Genres extends SherlockFragment {
 		ViewGroup bottomHeader = (ViewGroup) inflater.inflate(R.layout.allheader, allList, false);
 		//allList.addHeaderView(bottomHeader, null, false);
 		
-		ArrayAdapter<String> allAdapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1, allGenresList);
+		allAdapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1, allGenresList);
 		allList.setAdapter(allAdapter);
+		
+		allList.setOnItemClickListener(this);
+
 		
 		
 		/*ExpandableListView list = (ExpandableListView) v.findViewById(R.id.genreList);
@@ -630,6 +638,28 @@ public class Genres extends SherlockFragment {
 
 		childItem.add(topGenres);
 		childItem.add(allGenres);
+	}
+
+	@Override
+	public void onClick(View v) {
+		// TODO Auto-generated method stub
+				
+	}
+
+	@Override
+	public void onItemClick(AdapterView<?> adapt, View v, int pos, long arg3) {
+		// TODO Auto-generated method stub
+		String selected = allGenresList.get(pos);
+		String s_url = "";
+		String s_type ="genre";
+		String s_artist = selected;
+		
+		Intent i = new Intent(getActivity(), PlaylistActivity.class);
+        i.putExtra("url", s_url);
+        i.putExtra("type", s_type);
+        i.putExtra("artist", s_artist);
+        i.putExtra("new", true);
+        startActivityForResult(i, 1);
 	}
 	
 	

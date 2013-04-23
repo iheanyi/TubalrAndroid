@@ -333,7 +333,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		    
 				
 			pd = ProgressDialog.show(this, "Building Playlist", "Finding Songs Relevant For Query: " + name);
-			pd.setCancelable(true);
+			pd.setCancelable(false);
 		} else {
 			
 			videoList = (ArrayList<VideoClass>) intent.getSerializableExtra("videos");
@@ -1502,9 +1502,9 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	
     protected void onStart() {
     	super.onStart();	
-        BugSenseHandler.initAndStartSession(this, BUG_KEY);
+        /*BugSenseHandler.initAndStartSession(this, BUG_KEY);
         Bugsnag.register(this, "1d479c585e3d333a05943f37bef208cf");
-        FlurryAgent.onStartSession(this, FLURRY_KEY);
+        FlurryAgent.onStartSession(this, FLURRY_KEY);*/
     }
     
     private class MusicServiceBroadcastReceiver extends BroadcastReceiver {

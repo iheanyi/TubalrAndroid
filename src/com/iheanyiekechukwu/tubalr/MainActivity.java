@@ -203,6 +203,7 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 		
 		TitlePageIndicator indicator = (TitlePageIndicator) findViewById(R.id.indicator);
 		indicator.setViewPager(mViewPager);
+		//indicator.setViewPager(view)
 		indicator.setBackgroundColor(Color.DKGRAY);
 		
 		//mViewPager.setOnPageChangeListener(this);
@@ -230,6 +231,12 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 		  return fList;
 	}
 	
+	@Override
+	public void onSaveInstanceState(Bundle saveInstanceState) {
+		
+		saveInstanceState.putString("BUG_FIX", "BUG_FIX");
+		super.onSaveInstanceState(saveInstanceState);
+	}
     private final class MusicServiceConnection implements ServiceConnection {
 
 		@Override
@@ -240,7 +247,7 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 			musicServiceIntent = new Intent(getApplicationContext(), MusicService.class);
     		//musicServiceIntent.putExtra("videos", videos);
     		//musicServiceIntent.putExtra("artists", s_artist);
-			MusicService.setMainActivity(MainActivity.this);
+			//MusicService.setMainActivity(MainActivity.this);
 			
 			mBound = true;
 			

@@ -68,11 +68,11 @@
             android:name="com.iheanyiekechukwu.tubalr.PlaylistActivity"
             android:configChanges="keyboardHidden|orientation"
             android:label="@string/title_activity_playlist"
-            android:parentActivityName="com.iheanyiekechukwu.tubalr.HomeActivity"
+            android:parentActivityName="com.iheanyiekechukwu.tubalrMainActivity"
             android:screenOrientation="portrait" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.iheanyiekechukwu.tubalr.HomeActivity" />
+                android:value="com.iheanyiekechukwu.tubalr.MainActivity" />
 
             <intent-filter>
                 <action android:name="com.iheanyiekechukwu.tubalr.MusicService.PlAYLIST_UPDATED" />

@@ -83,7 +83,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
     private final Handler handler = new Handler();
 
     private static PlaylistActivity myActivity;
-    private static MainActivity homeActivity;
+    private static HomeActivity homeActivity;
     
     private static Context context;
     
@@ -514,7 +514,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 
 	}
 	
-	public static void setMainActivity(MainActivity hActivity) {
+	public static void setMainActivity(HomeActivity hActivity) {
 		
 		Log.v(TAG, "SETMAINACTIVITY CALLED FOR HOME ACTIVITY.");
 
@@ -1127,7 +1127,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 			
 			String[] results = result.trim().split("var swf = ");
 			
-			results = results[results.length - 1].trim().split("document.getElementById(");
+			results = results[results.length - 1].trim().split("document.getElementById\\(");
 			String html = results[0];
 			//getURLs(html);
 			decodeURL(result);

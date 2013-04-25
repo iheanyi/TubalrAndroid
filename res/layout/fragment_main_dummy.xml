@@ -47,7 +47,7 @@
                 
                 android:background="@drawable/selector_with_transparency"                
                 android:padding="8dp"
-                android:src="@drawable/player_first" />
+                android:src="@drawable/player_prev" />
 
             <ImageButton
                 android:id="@+id/homePlayButton"
@@ -75,7 +75,7 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/selector_with_transparency"
                 android:padding="8dp"
-                android:src="@drawable/player_last" />
+                android:src="@drawable/player_next" />
         </LinearLayout>
     </LinearLayout>
 

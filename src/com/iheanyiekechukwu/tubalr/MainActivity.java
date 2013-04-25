@@ -15,9 +15,11 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.res.Resources;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -32,6 +34,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup.LayoutParams;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -50,6 +53,8 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 import com.bugsense.trace.BugSenseHandler;
+import com.bugsnag.android.Bugsnag;
+import com.flurry.android.FlurryAgent;
 import com.viewpagerindicator.TabPageIndicator;
 import com.viewpagerindicator.TitlePageIndicator;
 
@@ -75,6 +80,7 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
     private ArrayAdapter<String> menuAdapter;
     private Resources res;
     private String[] menuNames;
+    
     
 	private BroadcastReceiver musicServiceBroadcastReceiver;
 
@@ -162,6 +168,10 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
+		BugSenseHandler.initAndStartSession(this, BUG_KEY);
+        Bugsnag.register(this, "1d479c585e3d333a05943f37bef208cf");
+        FlurryAgent.onStartSession(this, FLURRY_KEY);
+		
 		List<Fragment> fragments = getFragments();
 
 		// Create the adapter that will return a fragment for each of the three
@@ -171,9 +181,11 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 		
 		mSectionsPagerAdapter = new TabsAdapter(getSupportFragmentManager());
 		
-		pageAdapter = new MyPageAdapter(getSupportFragmentManager(), fragments);
+		//pageAdapter = new MyPageAdapter(getSupportFragmentManager(), fragments);
+		
 		// Set up the ViewPager with the sections adapter.
 		mViewPager = (ViewPager) findViewById(R.id.pager);
+		//mViewPager.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT));
 		mViewPager.setAdapter(mSectionsPagerAdapter);
 		
 		
@@ -194,6 +206,8 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
         Drawable d = getResources().getDrawable(R.drawable.navbar);
         
         getSupportActionBar().setBackgroundDrawable(d);
+        
+        context = getBaseContext();
 		//redditTab.setText("Subreddits");
 		//redditTab.setTabListener(this);
 		
@@ -206,6 +220,33 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 		//indicator.setViewPager(view)
 		indicator.setBackgroundColor(Color.DKGRAY);
 		
+		currentArtist = (TextView) findViewById(R.id.artistNameText);
+		currentArtist.setOnClickListener(this);
+		
+		controlLayout = (LinearLayout) findViewById(R.id.controlLayout);
+		
+		if(!isMyServiceRunning()) {
+			controlLayout.setVisibility(View.GONE);
+		}
+		
+		prevButton = (ImageButton) findViewById(R.id.homePrevButton);
+		nextButton = (ImageButton) findViewById(R.id.homeNextButton);
+		
+		homePlayButton = (ImageButton) findViewById(R.id.homePlayButton);
+		homePauseButton = (ImageButton) findViewById(R.id.homePrevButton);
+		
+		prevButton.setOnClickListener(this);
+		nextButton.setOnClickListener(this);
+		
+        context = getBaseContext();
+        
+		Typeface bolded = Typeface.createFromAsset(context.getAssets(), "fonts/Roboto-Regular.ttf");
+		Typeface light = Typeface.createFromAsset(context.getAssets(), "fonts/Roboto-Light.ttf");
+		
+        currentArtist.setTypeface(bolded);
+        artistSongList = new ArrayList<String>();
+
+		
 		//mViewPager.setOnPageChangeListener(this);
 		//bar.addTab(genreTab);
 		//bar.addTab(redditTab);
@@ -213,6 +254,53 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 		//mSectionsPagerAdapter.addTab(bar.newTab().setText("Reddit"), Subreddit.class, null);
 		
 	}
+	
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) { 
+    	
+		Log.d(TAG, "On activity result!");
+		
+		switch(requestCode) {
+			case 1:
+	    		if(resultCode == RESULT_OK) {
+	    			
+	    			Log.d(TAG, "Activity for Result! RESULT OK!");	
+	    			videos = (ArrayList<VideoClass>) data.getSerializableExtra("videos");
+		    		
+	    			//serviceConnection = new MusicServiceConnection();
+	    			if(isMyServiceRunning()) {
+	    				controlLayout.setVisibility(View.VISIBLE);
+	    			}
+	    			
+	    			MusicService.setMainActivity(MainActivity.this);
+
+		    		if(musicServiceIntent == null) {
+		    			musicServiceIntent = new Intent(this, MusicService.class);
+
+		    		}
+		    		
+		    		bindService(musicServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+
+		    		
+	    			
+			    	musicServiceBroadcastReceiver = new MusicServiceBroadcastReceiver();
+			    	IntentFilter filter = new IntentFilter(MusicService.UPDATE_PLAYLIST);
+			    	filter.addAction(MusicService.NEXT_TRACK);
+			    	filter.addAction(MusicService.PREV_TRACK);
+			    	filter.addAction(MusicService.PAUSE_TRACK);
+			    	filter.addAction(MusicService.PLAY_SELECT);
+			    	filter.addAction(MusicService.NEW_SONGS);
+			    	registerReceiver(musicServiceBroadcastReceiver, filter);
+	    			
+	    			//artist = data.getStringExtra("artist");
+			    	Log.d(TAG, "DONE REGISTERING JUNTS");
+			    	
+			    	
+	    	}
+	    		
+	    		break;
+		}
+
+}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -247,7 +335,7 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 			musicServiceIntent = new Intent(getApplicationContext(), MusicService.class);
     		//musicServiceIntent.putExtra("videos", videos);
     		//musicServiceIntent.putExtra("artists", s_artist);
-			//MusicService.setMainActivity(MainActivity.this);
+			MusicService.setMainActivity(MainActivity.this);
 			
 			mBound = true;
 			
@@ -537,27 +625,36 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
     	}
     }
     
+    @Override
     public void onPause() {
 	    //super.onPause();
+	    super.onPause();
+	   
 	    
-		  if(musicServiceBroadcastReceiver != null) {
+	    ForegroundHelper.activityStates[ForegroundHelper.MAINACT] = false;
+
+	    if(mBound && !!ForegroundHelper.activityExistsInForeground()){
+		    musicService.showNotification();
+		    musicService.setNotificationStatus(true);
+	    }
+
+		 if(musicServiceBroadcastReceiver != null) {
 			  unregisterReceiver(musicServiceBroadcastReceiver);
 			  musicServiceBroadcastReceiver = null;
-		  }
+		 }
 		
-		  if(mBound) {
+		if(mBound) {
 			 // unbindService(serviceConnection);
-		  }
+		}
 
 	    
 	    
-	    super.onPause();
 	    //unregisterReceiver(playlistReceiver);
 	    //playlistReceiver = null;
 	    
 	  }
     
-    
+    @Override
     public void onDestroy() {
 	    //super.onPause();
 	    super.onDestroy();
@@ -578,11 +675,91 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 	    //playlistReceiver = null;
 	    
 	  }
+    
+    @Override
+	public void onResume() {
+		  super.onResume();
+		  
+		  ForegroundHelper.activityStates[ForegroundHelper.MAINACT] = true;
 
+		  
+		  if(musicService != null || mBound) {
+			  musicService.updateButtons();
+		      if(mBound) {
+		    	  musicService.setNotificationStatus(false);
+		      }
+		  }
+		  
+		  	if(mBound) {
+			  	controlLayout = (LinearLayout) findViewById(R.id.controlLayout);
+				
+				if(!isMyServiceRunning()) {
+					controlLayout.setVisibility(View.GONE);
+				}
+				
+				prevButton = (ImageButton) findViewById(R.id.homePrevButton);
+				nextButton = (ImageButton) findViewById(R.id.homeNextButton);
+				
+				
+				
+				homePlayButton = (ImageButton) findViewById(R.id.homePlayButton);
+				homePauseButton = (ImageButton) findViewById(R.id.homePrevButton);
+				
+				prevButton.setOnClickListener(this);
+				nextButton.setOnClickListener(this);
+				
+		        context = getBaseContext();
+		        
+				currentArtist = (TextView) findViewById(R.id.artistNameText);
+				currentArtist.setOnClickListener(this);
+				
+				currentArtist.setText(musicService.getCurrentVideo().getTitle());
+				MusicService.setMainActivity(MainActivity.this);
+
+		  	}
+
+    }
+    
 
 	@Override
-	public void onClick(View arg0) {
+	public void onClick(View v) {
 		// TODO Auto-generated method stub
+        switch (v.getId()) {
+        
+  		case R.id.artistNameText:
+  			
+  			if(mBound) {
+  				Intent playlistIntent = new Intent(this, PlaylistActivity.class);
+  				playlistIntent.putExtra("videos", musicService.getVideos());
+  				playlistIntent.putExtra("new", false);
+  				startActivityForResult(playlistIntent, 1);
+  				
+  			}
+  			break;                                   
+        
+		case R.id.homeNextButton:
+
+			Log.d(TAG, "NextButton in Home Activity clicked!");
+			Intent nextTrackIntent = new Intent(NEXT_TRACK);
+			this.sendBroadcast(nextTrackIntent);
+			
+			//playNextTrack();
+	    
+			break;
+			
+		case R.id.homePrevButton:
+
+			Log.d(TAG, "previousButton in Home Activity clicked!");
+
+			Intent prevTrackIntent = new Intent(PREV_TRACK);
+			this.sendBroadcast(prevTrackIntent);
+			
+			break;
+		
+			
+		default: 
+			break;
+		}
 		
 	}
 

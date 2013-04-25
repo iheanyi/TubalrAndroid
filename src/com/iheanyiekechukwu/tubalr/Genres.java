@@ -15,6 +15,9 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import com.actionbarsherlock.app.SherlockFragment;
+import com.bugsense.trace.BugSenseHandler;
+import com.bugsnag.android.Bugsnag;
+import com.flurry.android.FlurryAgent;
 
 /**
  * A simple {@link android.support.v4.app.Fragment} subclass. Activities that
@@ -33,6 +36,9 @@ public class Genres extends SherlockFragment implements OnClickListener, OnItemC
 	private static final String ARG_PARAM2 = "param2";
 	public static final String EXTRA_MESSAGE = "EXTRA_MESSAGE";
 
+    public static final String BUG_KEY = "b27d57ef";
+    public static final String FLURRY_KEY = "4GF6RX8PZ7DP53V795RF";
+    
 	private ArrayAdapter<String> allAdapter;
 
 	// TODO: Rename and change types of parameters
@@ -533,6 +539,8 @@ public class Genres extends SherlockFragment implements OnClickListener, OnItemC
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
+;
+		
 		setGroupData();
 		setChildData();
 		
@@ -575,6 +583,10 @@ public class Genres extends SherlockFragment implements OnClickListener, OnItemC
 		allList.setAdapter(allAdapter);
 		
 		allList.setOnItemClickListener(this);
+		
+		BugSenseHandler.initAndStartSession(getActivity(), BUG_KEY);
+        Bugsnag.register(getActivity(), "1d479c585e3d333a05943f37bef208cf");
+        FlurryAgent.onStartSession(getActivity(), FLURRY_KEY);
 
 		
 		

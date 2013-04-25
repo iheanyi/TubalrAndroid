@@ -28,10 +28,12 @@ import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
+import android.annotation.TargetApi;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.app.TaskStackBuilder;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -44,8 +46,10 @@ import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -59,6 +63,7 @@ import android.widget.Toast;
 import com.koushikdutta.urlimageviewhelper.UrlImageViewHelper;
 //import com.iheanyiekechukwu.tubalr.PlaylistActivity.YoutubeVideoTask;
 
+@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 public class MusicService extends Service implements OnPreparedListener, OnClickListener, OnSeekBarChangeListener, OnErrorListener, OnCompletionListener, OnBufferingUpdateListener {
 
 	public static final String INTENT_BASE_NAME = "com.iheanyiekechukwu.tubalr.MusicService";
@@ -70,6 +75,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 	public static final String PAUSE_TRACK = INTENT_BASE_NAME + ".PAUSE_TRACK";
 	public static final String PLAY_SELECT = INTENT_BASE_NAME + ".PLAY_SELECT";
 	public static final String NEW_SONGS = INTENT_BASE_NAME + ".NEW_SONGS";
+	public static final String RESUME_TRACK = INTENT_BASE_NAME + ".RESUME_TRACK";
 
     private static final String YOUTUBE_VIDEO_URL = "https://youtube.com/watch?v=";
 
@@ -83,12 +89,14 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
     private final Handler handler = new Handler();
 
     private static PlaylistActivity myActivity;
-    private static HomeActivity homeActivity;
+    private static MainActivity homeActivity;
     
     private static Context context;
     
     private NotificationManager mNotificationManager;
     private Notification notification;
+    
+    public boolean isVisible = true;
 
 	public class MusicServiceBinder extends Binder {
 		public MusicService getService() {
@@ -96,6 +104,8 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 			return MusicService.this;
 		}
 	}
+	
+	public boolean notifStatus = false;
 	
 	
 	
@@ -110,6 +120,8 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		intentFilter.addAction(QUEUE_TRACK);
 		intentFilter.addAction(NEXT_TRACK);
 		intentFilter.addAction(PREV_TRACK);
+		intentFilter.addAction(PAUSE_TRACK);
+		intentFilter.addAction(RESUME_TRACK);
 		intentFilter.addAction(PLAY_SELECT);
 		intentFilter.addAction(NEW_SONGS);
 		registerReceiver(broadcastReceiver, intentFilter);
@@ -156,12 +168,36 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		//notificationManager.notify(0, notification);
 	}*/
 	
-	private void updateNotification() {
+/*	private void updateNotification() {
+		Intent intent = new Intent(getBaseContext(), PlaylistActivity.class);
+		intent.putExtra("videos", getVideos());
+		intent.putExtra("new", false);
 		
-		PendingIntent pIntent = PendingIntent.getActivity(this, 0, new Intent(this, PlaylistActivity.class), Intent.FLAG_ACTIVITY_NEW_TASK);
-//		notification.setLatestEventInfo(this, "Tubalr", videoList.get(current).getTitle(), pIntent);
+		PendingIntent pIntent = PendingIntent.getActivity(getBaseContext(), 0, intent, 0);
+		PendingIntent prevIntent = PendingIntent.getBroadcast(this, 0, new Intent(PREV_TRACK), 0);
+		PendingIntent nextIntent = PendingIntent.getBroadcast(this, 0, new Intent(NEXT_TRACK), 0);
+		PendingIntent pauseIntent = PendingIntent.getBroadcast(this, 0, new Intent(PLAY_TRACK), 0);
+		PendingIntent playIntent = PendingIntent.getBroadcast(this, 0, new Intent(PAUSE_TRACK), 0);
+		Notification.Builder mBuilder = new Notification.Builder(this)
+			.setSmallIcon(R.drawable.tubalr_icon)
+			.setContentTitle("Tubalr")
+			.setContentText(getCurrentVideo().getTitle())
+			.setContentIntent(pIntent)
+			.addAction(R.drawable.player_prev, "Last Song", prevIntent)
+			.addAction(mMediaPlayer.isPlaying() ? R.drawable.player_pause : R.drawable.player_play, mMediaPlayer.isPlaying() ? "Pause" : "Play", mMediaPlayer.isPlaying() ? pauseIntent : playIntent)
+			.addAction(R.drawable.player_next, "Next Song", nextIntent);
+		
+		Notification notif = mBuilder.build();
+		
+		NotificationManager notificationManager = 
+				  (NotificationManager) getSystemService (NOTIFICATION_SERVICE);
+			
+
+		notif.flags |= Notification.FLAG_ONGOING_EVENT | Notification.FLAG_AUTO_CANCEL;
+		notificationManager.notify(0, notif);
+		//		notification.setLatestEventInfo(this, "Tubalr", videoList.get(current).getTitle(), pIntent);
 		//notificationManager.notify(0, notification);
-	}
+	}*/
 	
 	private static String getTimeString(long millis) {
 		StringBuffer buf = new StringBuffer();
@@ -265,9 +301,13 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		if(homeActivity != null) {
 			final ImageButton playButton = (ImageButton) homeActivity.findViewById(R.id.homePlayButton);
 			final ImageButton pauseButton = (ImageButton) homeActivity.findViewById(R.id.homePauseButton);
-		
+			final ImageButton nextButton = (ImageButton) homeActivity.findViewById(R.id.homeNextButton);
+			final ImageButton prevButton = (ImageButton) homeActivity.findViewById(R.id.homePrevButton);
+			
 			playButton.setOnClickListener(this);
 			pauseButton.setOnClickListener(this);
+			prevButton.setOnClickListener(this);
+			nextButton.setOnClickListener(this);
 			
 		    if(isPlaying() || mMediaPlayer.isPlaying()) {
 		    	playButton.setVisibility(View.GONE);
@@ -328,7 +368,9 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 				public void onClick(View arg0) {
 					// TODO Auto-generated method stub
 					if(mMediaPlayer.isPlaying() && mMediaPlayer != null) {
-						pause();
+						//pause();
+						mMediaPlayer.pause();
+						paused = true;
 						pauseButton.setVisibility(View.GONE);
 						playButton.setVisibility(View.VISIBLE);
 					}
@@ -452,7 +494,8 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 					public void onClick(View arg0) {
 						// TODO Auto-generated method stub
 						if(mMediaPlayer.isPlaying() && mMediaPlayer != null) {
-							pause();
+							mMediaPlayer.pause();
+							paused = true;
 							pauseButton.setVisibility(View.GONE);
 							playButton.setVisibility(View.VISIBLE);
 						}
@@ -503,7 +546,8 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 				public void onClick(View arg0) {
 					// TODO Auto-generated method stub
 					if(!paused && mMediaPlayer != null) {
-						pause();
+						paused = true;
+						mMediaPlayer.pause();
 						pauseButton.setVisibility(View.GONE);
 						playButton.setVisibility(View.VISIBLE);
 					}
@@ -514,7 +558,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 
 	}
 	
-	public static void setMainActivity(HomeActivity hActivity) {
+	public static void setMainActivity(MainActivity hActivity) {
 		
 		Log.v(TAG, "SETMAINACTIVITY CALLED FOR HOME ACTIVITY.");
 
@@ -528,6 +572,8 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		//pauseButton.setOnClickListener(homeActivity);
 		
 		final ImageButton nextButton = (ImageButton) homeActivity.findViewById(R.id.homeNextButton);
+		
+
 		nextButton.setOnClickListener(homeActivity);
 		
 		final ImageButton prevButton = (ImageButton) homeActivity.findViewById(R.id.homePrevButton);
@@ -571,7 +617,8 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 			public void onClick(View arg0) {
 				// TODO Auto-generated method stub
 				if(!paused && mMediaPlayer != null) {
-					pause();
+					mMediaPlayer.pause();
+					paused = true;
 					pauseButton.setVisibility(View.GONE);
 					playButton.setVisibility(View.VISIBLE);
 				}
@@ -634,6 +681,8 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		intentFilter.addAction(QUEUE_TRACK);
 		intentFilter.addAction(NEXT_TRACK);
 		intentFilter.addAction(PREV_TRACK);
+		intentFilter.addAction(PAUSE_TRACK);
+		intentFilter.addAction(RESUME_TRACK);
 		intentFilter.addAction(PLAY_SELECT);
 		intentFilter.addAction(NEW_SONGS);
 		registerReceiver(broadcastReceiver, intentFilter);
@@ -734,6 +783,10 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		//play();
 	}
 	
+	public void setNotificationStatus(boolean status) {
+		notifStatus = status;
+	}
+	
 	public void play(int i) {
 		
 		Log.v(TAG, "Currently in playing a specific song . . .");
@@ -763,6 +816,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 			mMediaPlayer.start();
 			paused = false;
 			return;
+			
 		} else if(mMediaPlayer != null) {
 			release();
 		}
@@ -786,7 +840,9 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 				currentText.setText(video.getTitle());
 			}
 
-	
+			if(notifStatus && !ForegroundHelper.activityExistsInForeground()) {
+				showNotification();
+			}
 			
 
 			
@@ -861,7 +917,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		return current;
 	}
 	
-	public static void pause() {
+	public void pause() {
 		if(mMediaPlayer.isPlaying()) {
 			mMediaPlayer.pause();
 			paused = true;
@@ -881,7 +937,10 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 				pauseButton.setVisibility(View.GONE);
 				playButton.setVisibility(View.VISIBLE);
 			}
-			
+
+			if(notifStatus && !ForegroundHelper.activityExistsInForeground()) {
+				showNotification();
+			}
 		}
 	}
 	
@@ -935,6 +994,9 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 			
 			if(PLAY_TRACK.equals(action)) {
 				playCurrentSong();
+			} else if(RESUME_TRACK.equals(action)) {
+				Log.v(TAG, "play() called.");
+				play();
 			} else if(NEXT_TRACK.equals(action)) {
 				Log.v(TAG, "nextTrack() called.");
 				nextTrack();
@@ -1101,7 +1163,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 				//adapter.notifyDataSetChanged();
 
 		        Uri testUri = Uri.parse(testString);
-
+		        
 		        play();
 	
 			}
@@ -1289,8 +1351,19 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 				
 				}
 				break;
+				
+			case R.id.homePrevButton:
+				prevTrack();
+				break;
+				
+			case R.id.nextButton:
+				nextTrack();
+				break;
+				
+			default:
+				break;
 		} 
-			}
+	}
 		
 		
 		/*switch (v.getId()) {
@@ -1349,6 +1422,57 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 
 		default: 
 			break;*/
+	}
+
+
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+	public void showNotification() {
+		// TODO Auto-generated method stub
+		
+		
+		Intent intent = null;
+		if(homeActivity != null) {
+			intent = new Intent(getBaseContext(), MainActivity.class);
+		}
+		
+		if(myActivity != null) {
+			intent = new Intent(getBaseContext(), PlaylistActivity.class);
+			intent.putExtra("videos", getVideos());
+			intent.putExtra("new", false);
+		}
+		PendingIntent pIntent = PendingIntent.getActivity(getBaseContext(), 0, intent, 0);
+		PendingIntent prevIntent = PendingIntent.getBroadcast(this, 0, new Intent(PREV_TRACK), 0);
+		PendingIntent nextIntent = PendingIntent.getBroadcast(this, 0, new Intent(NEXT_TRACK), 0);
+		PendingIntent pauseIntent = PendingIntent.getBroadcast(this, 0, new Intent(RESUME_TRACK), 0);
+		PendingIntent playIntent = PendingIntent.getBroadcast(this, 0, new Intent(PAUSE_TRACK), 0);
+		Notification.Builder mBuilder = new Notification.Builder(this)
+			.setSmallIcon(R.drawable.tubalr_icon)
+			.setContentTitle("Tubalr")
+			.setContentText(getCurrentVideo().getTitle())
+			.setContentIntent(pIntent)
+			.addAction(R.drawable.player_prev, "Last Song", prevIntent)
+			.addAction(paused ? R.drawable.player_play : R.drawable.player_pause, paused ? "Play" : "Pause", paused ? playIntent : pauseIntent)
+			.addAction(R.drawable.player_next, "Next Song", nextIntent);
+		
+		Notification notif = mBuilder.build();
+		
+		NotificationManager notificationManager = 
+				  (NotificationManager) getSystemService (NOTIFICATION_SERVICE);
+			
+
+		notif.flags |= Notification.FLAG_ONGOING_EVENT | Notification.FLAG_AUTO_CANCEL;
+		notificationManager.notify(0, notif);
+		
+		//mNotificationManager.notify(0, mBuilder.build();
+
+		
+		
+	}
+
+
+	public void checkVisibility(boolean b) {
+		// TODO Auto-generated method stub
+		isVisible = b;	
 	}
     
 	

@@ -1280,10 +1280,10 @@ containing a value of this type.
         public static final int list_select=0x7f02007f;
         public static final int navbar=0x7f020080;
         public static final int player_add=0x7f020081;
-        public static final int player_first=0x7f020082;
-        public static final int player_last=0x7f020083;
-        public static final int player_pause=0x7f020084;
-        public static final int player_play=0x7f020085;
+        public static final int player_next=0x7f020082;
+        public static final int player_pause=0x7f020083;
+        public static final int player_play=0x7f020084;
+        public static final int player_prev=0x7f020085;
         public static final int player_shuffle=0x7f020086;
         public static final int plus=0x7f020087;
         public static final int pressed=0x7f020088;

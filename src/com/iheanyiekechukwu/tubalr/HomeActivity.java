@@ -265,7 +265,7 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
     	    				controlLayout.setVisibility(View.VISIBLE);
     	    			}
     	    			
-    	    			MusicService.setMainActivity(HomeActivity.this);
+    	    			//MusicService.setMainActivity(HomeActivity.this);
 
     		    		if(musicServiceIntent == null) {
     		    			musicServiceIntent = new Intent(this, MusicService.class);
@@ -912,7 +912,7 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 			musicServiceIntent = new Intent(getApplicationContext(), MusicService.class);
     		//musicServiceIntent.putExtra("videos", videos);
     		//musicServiceIntent.putExtra("artists", s_artist);
-			MusicService.setMainActivity(HomeActivity.this);
+			//MusicService.setMainActivity(HomeActivity.this);
 			
 			mBound = true;
 			
@@ -993,6 +993,9 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 		  super.onResume();
 		  
 		  
+		  //ForegroundHelper.activityStates[ForegroundHelper.ACTIVITY_A] = true;
+
+		  
 		  if(musicService != null || mBound) {
 			  musicService.updateButtons();
 		  }
@@ -1021,6 +1024,7 @@ public class HomeActivity extends SherlockActivity implements OnItemClickListene
 		
 		  if(mBound) {
 			 // unbindService(serviceConnection);
+			  musicService.setNotificationStatus(true);
 		  }
 
 	    

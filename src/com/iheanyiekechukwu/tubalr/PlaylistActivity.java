@@ -1187,6 +1187,12 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	  public void onPause() {
 	    //super.onPause();
 	    
+		  ForegroundHelper.activityStates[ForegroundHelper.PLAYACT] = true;
+
+		  if(mBound && !ForegroundHelper.activityExistsInForeground()) {
+			  musicService.showNotification();
+			  musicService.setNotificationStatus(true);
+		  }
 		  if(musicServiceBroadcastReceiver != null) {
 			  unregisterReceiver(musicServiceBroadcastReceiver);
 			  musicServiceBroadcastReceiver = null;
@@ -1201,9 +1207,9 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	    super.onPause();
 	    
 	    
-	    if(mReceiver != null) {
+	    /*if(mReceiver != null) {
 			mReceiver.setReceiver(null);
-	    }
+	    }*/
 	    //unregisterReceiver(playlistReceiver);
 	    //playlistReceiver = null;
 	    
@@ -1244,6 +1250,15 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		  BugSenseHandler.initAndStartSession(this, BUG_KEY);
 	      Bugsnag.register(this, "1d479c585e3d333a05943f37bef208cf");
 	      FlurryAgent.onStartSession(this, FLURRY_KEY);
+	      
+	      
+		  ForegroundHelper.activityStates[ForegroundHelper.PLAYACT] = true;
+
+	      if(mBound) {
+	    	  MusicService.setMainActivity(PlaylistActivity.this);
+	    	  musicService.setNotificationStatus(true);
+	    	  //musicService.checkVisibility(false);
+	      }
 	      
 
 		  //registerReceiver(playlistReceiver, intentFilter);

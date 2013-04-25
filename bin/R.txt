@@ -342,10 +342,10 @@ int drawable ic_launcher 0x7f02007e
 int drawable list_select 0x7f02007f
 int drawable navbar 0x7f020080
 int drawable player_add 0x7f020081
-int drawable player_first 0x7f020082
-int drawable player_last 0x7f020083
-int drawable player_pause 0x7f020084
-int drawable player_play 0x7f020085
+int drawable player_next 0x7f020082
+int drawable player_pause 0x7f020083
+int drawable player_play 0x7f020084
+int drawable player_prev 0x7f020085
 int drawable player_shuffle 0x7f020086
 int drawable plus 0x7f020087
 int drawable pressed 0x7f020088

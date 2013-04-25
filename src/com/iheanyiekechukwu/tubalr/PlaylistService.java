@@ -86,7 +86,7 @@ public class PlaylistService extends IntentService {
 	public static final int STATUS_FINISHED = 1;
 	public static final int STATUS_ERROR = 2;
 	
-	public EchoNestAPI echoNest;
+	//public EchoNestAPI echoNest;
 	
 	ResultReceiver receiver;
 	
@@ -123,14 +123,11 @@ public class PlaylistService extends IntentService {
         //Toast.makeText(this, url, Toast.LENGTH_SHORT).show();
 		
 		
-		StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+		//StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
 
-		StrictMode.setThreadPolicy(policy); 
+		//StrictMode.setThreadPolicy(policy); 
 		
 		if(type.equals("just")) {
-			
-			//EchoJustTask newTask = new EchoJustTask();
-			//newTask.execute(artist);
         	processEchoNestJSON(artist);
 		} else if(type.equals("genre")) {
 			processGenreJSON(artist);
@@ -140,7 +137,7 @@ public class PlaylistService extends IntentService {
 		}
 		
 		
-		stopSelf();
+		//this.stopSelf();
 		
 		
 
@@ -192,7 +189,7 @@ public class PlaylistService extends IntentService {
     }
     
     public void processGenreJSON(String genre) {
-		echoNest = new EchoNestAPI("OYJRQNQMCGIOZLFIW");
+		EchoNestAPI echoNest = new EchoNestAPI("OYJRQNQMCGIOZLFIW");
     	PlaylistParams params = new PlaylistParams();
     	params.setType(PlaylistParams.PlaylistType.GENRE_RADIO);
     	params.addGenre(genre);
@@ -202,7 +199,7 @@ public class PlaylistService extends IntentService {
 	    	if(playlist.getSongs().size() > 10) {
 	    		for(Song song: playlist.getSongs()) {
 	    			String search = song.getArtistName() + " - " + song.getTitle();
-	    			String type = "just";
+	    			String type = "genre";
 	    			Log.d(TAG, "Processing YouTube JSON for " + search);
 	    			processYoutubeJSON(search, type);
 	    		}
@@ -216,13 +213,14 @@ public class PlaylistService extends IntentService {
 		b.putSerializable("videos", videos);
 		b.putString("artist", artist);
 		receiver.send(STATUS_FINISHED, b);
-		Log.d(TAG, "Attempting to stop service. . . ");
+		//Log.d(TAG, "Attempting to stop service. . . ");
+		//this.stopSelf();
 
     }
 
 	public void processSimilarJSON(String result) {
 		// TODO Auto-generated method stub
-		echoNest = new EchoNestAPI("OYJRQNQMCGIOZLFIW");
+		EchoNestAPI echoNest = new EchoNestAPI("OYJRQNQMCGIOZLFIW");
 
 		try {
 			List<Artist> artists = echoNest.searchArtists(result);
@@ -238,11 +236,12 @@ public class PlaylistService extends IntentService {
 				processYoutubeJSON(search_url, type);
 				
 				for(Artist a : similar) {
-					List<Song> songs = a.getSongs();
-					Collections.shuffle(songs);
-					String song = songs.get(0).getTitle();
+					//List<Song> songs = a.getSongs();
+					//Collections.shuffle(songs);
+					//String song = songs.get(0).getTitle();
 					type = "similar";
-					search_url = a.getName() + " - " + song;
+					//search_url = a.getName() + " - " + song;
+					search_url = a.getName();
 					processYoutubeJSON(search_url, type);	
 				}
 				
@@ -268,6 +267,9 @@ public class PlaylistService extends IntentService {
 		b.putSerializable("videos", videos);
 		b.putString("artist", artist);
 		receiver.send(STATUS_FINISHED, b);
+		//this.stopSelf();
+		
+		
 		/*Log.d(TAG, "Attempting to stop service. . . ");
 		stopSelf();
 		Log.d(TAG, "Trying again. . . ");
@@ -342,60 +344,127 @@ public class PlaylistService extends IntentService {
 	    // TODO Auto-generated method stub
 		
 		
-	    try {
 
 			
 			YouTubeService service = new YouTubeService("Tubalr");
-			YouTubeQuery query = new YouTubeQuery(new URL("http://gdata.youtube.com/feeds/api/videos"));
-			query.setOrderBy(YouTubeQuery.OrderBy.RELEVANCE);
-			query.setIncludeRacy(false);
-			query.setFullTextQuery(result);
-			if(type != "youtube") {
-				query.setMaxResults(10);
-			} else {
-				query.setMaxResults(30);
-			}
-			query.setStartIndex(1);
-			query.setSafeSearch(YouTubeQuery.SafeSearch.NONE);
-			Query.CategoryFilter musicFilter = new Query.CategoryFilter();
-			musicFilter.addCategory(new Category(YouTubeNamespace.CATEGORY_SCHEME, "Music"));
-			if(type.equals("just") || type.equals("similar")) {
-				query.addCategoryFilter(musicFilter);
-			}
-			
-			VideoFeed feed = service.query(query, VideoFeed.class);
-			
-			Log.d(TAG, "Size of Videos " + Integer.toString(videos.size()));
-			
-			for(VideoEntry entry : feed.getEntries()) {
-				String id = entry.getMediaGroup().getVideoId();
-				String title = entry.getTitle().getPlainText();
-				Log.d(TAG, "TITLE: " + title);
-				String thumbnailString = entry.getMediaGroup().getThumbnails().get(3).getUrl();
+			YouTubeQuery query;
+			try {
+				query = new YouTubeQuery(new URL("http://gdata.youtube.com/feeds/api/videos"));
+				query.setOrderBy(YouTubeQuery.OrderBy.RELEVANCE);
+				query.setIncludeRacy(false);
+				query.setFullTextQuery(result);
 				
+				if(type != "youtube") {
+					query.setMaxResults(10);
+				} else {
+					query.setMaxResults(30);
+				}
+				query.setStartIndex(1);
+				query.setSafeSearch(YouTubeQuery.SafeSearch.NONE);
+				Query.CategoryFilter musicFilter = new Query.CategoryFilter();
+				musicFilter.addCategory(new Category(YouTubeNamespace.CATEGORY_SCHEME, "Music"));
+				if(type.equals("just") || type.equals("similar")) {
+					query.addCategoryFilter(musicFilter);
+				}
 				
-				Log.d(TAG, "ID: " + id);
-				VideoClass newVideo = new VideoClass(id, title, thumbnailString);
+				VideoFeed feed = service.query(query, VideoFeed.class);
 				
-				//if(type.equals("just")) {
-					/*if(title.contains("cover") || title.contains("remix") 
-							|| entry.getMediaGroup().getDescription().toString().contains("live") || entry.getMediaGroup().getDescription().toString().contains("concert") 
-							|| title.trim().equals("") || isUnique(entry)) {
-						continue;
-					} else {
-						videos.add(newVideo);
-					}*/
+				Log.d(TAG, "Size of Videos " + Integer.toString(videos.size()));
+				
+				for(VideoEntry entry : feed.getEntries()) {
+					String id = entry.getMediaGroup().getVideoId();
+					String title = entry.getTitle().getPlainText();
+					Log.d(TAG, "TITLE: " + title);
+					String thumbnailString = entry.getMediaGroup().getThumbnails().get(3).getUrl();
 					
-					if(!type.equals("youtube")) {
-						
-						if(isUnique(entry)) {
+					
+					Log.d(TAG, "ID: " + id);
+					VideoClass newVideo = new VideoClass(id, title, thumbnailString);
+					
+					//if(type.equals("just")) {
+						/*if(title.contains("cover") || title.contains("remix") 
+								|| entry.getMediaGroup().getDescription().toString().contains("live") || entry.getMediaGroup().getDescription().toString().contains("concert") 
+								|| title.trim().equals("") || isUnique(entry)) {
+							continue;
+						} else {
 							videos.add(newVideo);
-							break;
-						}
+						}*/
+						
+		            if(type.equals("just")) {
+			            if(isUnique(entry) && isMusic(entry) && isNotCoverOrRemix(entry) && isNotLive(entry) && hasTitle(entry)) {
+		        	        //Toast.makeText(this, "Adding new video . . . " + videoTitle + " - " + id, Toast.LENGTH_SHORT).show();
+		                	videos.add(newVideo);
+		                	
+		                    Log.d("TUB", Integer.toString(videos.size()));
+		                    Log.d("TUB", id + " - " + title);
+		                    Log.d("TUB", "From the Just type");
+		                    
+		                    break;
+		                    
+			            }
+		            }
+		            
+		            else if(type.equals("genre")) {
+		            	if(isMusic(entry) && isNotLive(entry)) {
+		            		videos.add(newVideo);
+		            		
+		            		Log.d("TUB", Integer.toString(videos.size()));
+		            		Log.d("TUB", id + " - " + title);
+		            		Log.d("TUB", "From the genre type");
+		            		break;
+		            	}
+		            }
+		            
+		            else if(type.equals("similar")) {
+			            if(isMusic(entry) && isNotCoverOrRemix(entry) && isNotLive(entry)) {
+		        	        //Toast.makeText(this, "Adding new video . . . " + videoTitle + " - " + id, Toast.LENGTH_SHORT).show();
+		                	videos.add(newVideo);
+		                	
+		                    Log.d("TUB", Integer.toString(videos.size()));
+		                    Log.d("TUB", id + " - " + title);
+		                    Log.d("TUB", "From the similar type . . . ");
+		                    
+		                    break;
+		                    
 
-					} else {
-						videos.add(newVideo);
+			            }
+		            }
+		            
+		            else if(type.equals("youtube")) {
+		                	videos.add(newVideo);
+		                	
+		                    Log.d("TUB", Integer.toString(videos.size()));
+		                    Log.d("TUB", id + " - " + title);
+		                    Log.d("TUB", "From the Youtube Type");
+		                    
+		                    //break;
+		            	
+		            }
+		    
 					}
+			} catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ServiceException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+	            
+	            /*else if(type.equals("youtube")) {
+	            	if(isNotUserBanned(entry) && isNotBlocked(entry)) {
+	                	videos.add(newVideo);
+	                	
+	                    Log.d("TUB", Integer.toString(videos.size()));
+	                    Log.d("TUB", id + " - " + videoTitle);
+	                    Log.d("TUB", "From the Youtube Type");
+	                    
+	                    //break;
+	            	}
+	            }
 					
 
 
@@ -588,7 +657,15 @@ public class PlaylistService extends IntentService {
 	public boolean isNotBlocked(JSONObject video) {
 		return !video.has("app$control");
 	}
-
+	
+	public boolean isMusic(VideoEntry entry) {
+		String category = entry.getMediaGroup().getYouTubeCategory().getLabel();
+		
+		Log.d(TAG, "Music Test: " + Boolean.toString(category.equals("Music")));
+		return category.equals("Music");
+	}
+	
+	
 	public boolean isMusic(JSONObject video) {
 		JSONObject mediaGroup;
 		
@@ -606,6 +683,33 @@ public class PlaylistService extends IntentService {
 			Log.d("CHECK", "Check isMusic Method");
 			e.printStackTrace();
 		}
+		
+		return true;
+	}
+	
+	public boolean isNotCoverOrRemix(VideoEntry entry) {
+		
+		
+		String title = entry.getTitle().getPlainText();
+		
+		if(title.contains("cover") || title.contains("remix") || title.contains("alternate") || title.contains("interview")) {
+			
+			Log.d(TAG, "isNotCoverOrRemix failed");
+			return false;
+		}
+		
+		return true;
+	}
+	
+	public boolean isNotLive(VideoEntry entry) {
+		String description = entry.getMediaGroup().getDescription().getPlainTextContent();
+		String title = entry.getTitle().getPlainText();
+		
+		if(description.contains("live") || description.contains("concert") || title.contains("live") || title.contains("concert")) {
+			Log.d(TAG, "Failed the isNotLive test");
+			return false;
+		}
+		
 		
 		return true;
 	}
@@ -654,6 +758,19 @@ public class PlaylistService extends IntentService {
 		return true;
 	
 	}
+	
+	public boolean hasTitle(VideoEntry entry) {
+		String title = "";
+		
+		title = entry.getTitle().getPlainText();
+		if(title.equals("")) {
+			Log.d(TAG, "Failed hasTitle()");
+			return false;
+		} else {
+			return true;
+		}
+		
+	}
 
 	public boolean isNotLive(JSONObject video) {
 		try {
@@ -679,7 +796,7 @@ public class PlaylistService extends IntentService {
 	 * Could lead to a possible performance increase for the application */
 	public void processEchoNestJSON(String result) {
 	    // TODO Auto-generated method stub
-		echoNest = new EchoNestAPI("OYJRQNQMCGIOZLFIW");
+		EchoNestAPI echoNest = new EchoNestAPI("OYJRQNQMCGIOZLFIW");
 
 	    try {
 	    	
@@ -699,7 +816,7 @@ public class PlaylistService extends IntentService {
 	    	}*/
 	    	
 			List<Artist> artists = echoNest.searchArtists(result);
-			if(artists.size() > 0) {
+			if(artists.size() > 10) {
 				Artist searched = artists.get(0);
 				
 				String name = searched.getName();
@@ -828,6 +945,7 @@ public class PlaylistService extends IntentService {
 		b.putString("artist", artist);
 		receiver.send(STATUS_FINISHED, b);
 		Log.d(TAG, "Attempting to stop service. . . ");
+		//this.stopSelf();
 		//stopSelf();
 		//Log.d(TAG, "Trying again. . . ");
 		//this.stopSelf();
@@ -909,7 +1027,7 @@ public class PlaylistService extends IntentService {
 				List<Artist> artists = null;
 				List<Song> justSongs = null;
 				
-				echoNest = new EchoNestAPI("OYJRQNQMCGIOZLFIW");
+				EchoNestAPI echoNest = new EchoNestAPI("OYJRQNQMCGIOZLFIW");
 				
 				Log.d(TAG, "Currently in the EchoJustTask");
 

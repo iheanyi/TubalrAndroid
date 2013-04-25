@@ -51,6 +51,7 @@
                 <action android:name="com.iheanyiekechukwu.tubalr.MusicService.NEXT_TRACK" />
                 <action android:name="com.iheanyiekechukwu.tubalr.MusicService.PLAY_TRACK" />
                 <action android:name="com.iheanyiekechukwu.tubalr.MusicService.PAUSE_TRACK" />
+                <action android:name="com.iheanyiekechukwu.tubalr.MusicService.RESUME_TRACK" />
                 <action android:name="com.iheanyiekechukwu.tubalr.MusicService.PLAY_SELECT" />
                 <action android:name="com.iheanyiekechukwu.tubalr.MusicService.PREV_TRACK" />
             </intent-filter>
@@ -79,6 +80,7 @@
                 <action android:name="com.iheanyiekechukwu.tubalr.MusicService.NEXT_TRACK" />
                 <action android:name="com.iheanyiekechukwu.tubalr.MusicService.PLAY_TRACK" />
                 <action android:name="com.iheanyiekechukwu.tubalr.MusicService.PAUSE_TRACK" />
+                 <action android:name="com.iheanyiekechukwu.tubalr.MusicService.RESUME_TRACK" />
                 <action android:name="com.iheanyiekechukwu.tubalr.MusicService.PLAY_SELECT" />
                 <action android:name="com.iheanyiekechukwu.tubalr.MusicService.PREV_TRACK" />
             </intent-filter>

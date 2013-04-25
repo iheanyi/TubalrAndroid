@@ -815,6 +815,9 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		if(mMediaPlayer != null && paused) {
 			mMediaPlayer.start();
 			paused = false;
+			if(notifStatus && !ForegroundHelper.activityExistsInForeground()) {
+				showNotification();
+			}
 			return;
 			
 		} else if(mMediaPlayer != null) {
@@ -1450,9 +1453,9 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 			.setContentTitle("Tubalr")
 			.setContentText(getCurrentVideo().getTitle())
 			.setContentIntent(pIntent)
-			.addAction(R.drawable.player_prev, "Last Song", prevIntent)
-			.addAction(paused ? R.drawable.player_play : R.drawable.player_pause, paused ? "Play" : "Pause", paused ? playIntent : pauseIntent)
-			.addAction(R.drawable.player_next, "Next Song", nextIntent);
+			.addAction(R.drawable.player_prev, "", prevIntent)
+			.addAction(isPlaying() ? R.drawable.player_pause: R.drawable.player_play, isPlaying() ? "" : "", isPlaying() ? playIntent : pauseIntent)
+			.addAction(R.drawable.player_next, "", nextIntent);
 		
 		Notification notif = mBuilder.build();
 		
@@ -1460,7 +1463,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 				  (NotificationManager) getSystemService (NOTIFICATION_SERVICE);
 			
 
-		notif.flags |= Notification.FLAG_ONGOING_EVENT | Notification.FLAG_AUTO_CANCEL;
+		notif.flags |= Notification.FLAG_NO_CLEAR | Notification.FLAG_ONGOING_EVENT | Notification.FLAG_AUTO_CANCEL;
 		notificationManager.notify(0, notif);
 		
 		//mNotificationManager.notify(0, mBuilder.build();

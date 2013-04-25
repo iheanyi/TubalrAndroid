@@ -633,7 +633,7 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 	    
 	    ForegroundHelper.activityStates[ForegroundHelper.MAINACT] = false;
 
-	    if(mBound && !!ForegroundHelper.activityExistsInForeground()){
+	    if(mBound && !ForegroundHelper.activityExistsInForeground()){
 		    musicService.showNotification();
 		    musicService.setNotificationStatus(true);
 	    }

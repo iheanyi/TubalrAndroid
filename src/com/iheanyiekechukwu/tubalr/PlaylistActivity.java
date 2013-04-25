@@ -1187,12 +1187,13 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	  public void onPause() {
 	    //super.onPause();
 	    
-		  ForegroundHelper.activityStates[ForegroundHelper.PLAYACT] = true;
+		  ForegroundHelper.activityStates[ForegroundHelper.PLAYACT] = false;
 
 		  if(mBound && !ForegroundHelper.activityExistsInForeground()) {
 			  musicService.showNotification();
 			  musicService.setNotificationStatus(true);
 		  }
+		  
 		  if(musicServiceBroadcastReceiver != null) {
 			  unregisterReceiver(musicServiceBroadcastReceiver);
 			  musicServiceBroadcastReceiver = null;
@@ -1256,7 +1257,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 
 	      if(mBound) {
 	    	  MusicService.setMainActivity(PlaylistActivity.this);
-	    	  musicService.setNotificationStatus(true);
+	    	  musicService.setNotificationStatus(false);
 	    	  //musicService.checkVisibility(false);
 	      }
 	      

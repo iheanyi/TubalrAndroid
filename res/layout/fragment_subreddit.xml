@@ -7,9 +7,11 @@
 
     <!-- TODO: Update blank fragment layout -->
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Reddit List" />
-
+ <ExpandableListView
+     android:id="@+id/expandable_list"
+     android:layout_width="fill_parent"
+     android:layout_height="fill_parent"
+     android:childIndicator="@drawable/bg_noise"
+     android:drawSelectorOnTop="true" />
+ 
 </LinearLayout>

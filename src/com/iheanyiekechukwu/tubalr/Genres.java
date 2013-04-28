@@ -590,54 +590,6 @@ public class Genres extends SherlockFragment implements OnClickListener, OnItemC
 
 		
 		
-		/*ExpandableListView list = (ExpandableListView) v.findViewById(R.id.genreList);
-		List<? extends Map<String, ?>> groupData;
-		//NewAdapter mNewAdapter = new NewAdapter(groupItem, childItem);
-		//mNewAdapter.setInflater((LayoutInflater) getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE), getActivity());
-		
-		List<Map<String, String>> groupData1 = new ArrayList<Map<String, String>>();
-		List<List<Map<String, String>>> childData = new ArrayList<List<Map<String, String>>>();
-	
-		String[] stuff = {"Top Genres", "All Genres"};
-		int i= 0;
-		
-		for(String s: stuff) {
-			Map<String, String> curGroupMap = new HashMap<String, String>();
-			groupData1.add(curGroupMap);
-			curGroupMap.put("GENRE", s);
-			
-			List<Map<String, String>> children = new ArrayList<Map<String, String>>();
-			if(i == 0) {
-				for(String u: topGenres) {
-					Map<String, String> curChildMap = new HashMap<String, String>();
-					children.add(curChildMap);
-					curChildMap.put("GENRE", u);
-				}
-			} else {
-				for(String u: allGenres) {
-					Map<String, String> curChildMap = new HashMap<String, String>();
-					children.add(curChildMap);
-					curChildMap.put("GENRE", u);
-				}
-			}
-
-			childData.add(children);
-		}
-		
-		ExpandableListAdapter mNewAdapter = new SimpleExpandableListAdapter(
-                getActivity(),
-                groupData1,
-                android.R.layout.simple_expandable_list_item_1,
-                new String[] { "GENRE"},
-                new int[] { android.R.id.text1, android.R.id.text2 },
-                childData,
-                android.R.layout.simple_expandable_list_item_2,
-                new String[] { "GENRE"},
-                new int[] { android.R.id.text1, android.R.id.text2 }
-                );
-		list.setAdapter(mNewAdapter); */
-		
-		
 		return v;
 	}
 	

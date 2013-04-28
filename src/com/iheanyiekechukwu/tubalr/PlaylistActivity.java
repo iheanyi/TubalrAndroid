@@ -333,7 +333,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		    
 				
 			pd = ProgressDialog.show(this, "Building Playlist", "Finding Songs Relevant For Query: " + name);
-			pd.setCancelable(false);
+			pd.setCancelable(true);
 		} else {
 			
 			videoList = (ArrayList<VideoClass>) intent.getSerializableExtra("videos");

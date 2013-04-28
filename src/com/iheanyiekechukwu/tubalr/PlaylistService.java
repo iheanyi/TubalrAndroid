@@ -59,6 +59,8 @@ import com.google.gdata.data.youtube.VideoEntry;
 import com.google.gdata.data.youtube.VideoFeed;
 import com.google.gdata.data.youtube.YouTubeNamespace;
 import com.google.gdata.util.ServiceException;
+import com.koushikdutta.async.http.AsyncHttpClient;
+import com.koushikdutta.async.http.AsyncHttpResponse;
 
 public class PlaylistService extends IntentService {
 	
@@ -74,6 +76,9 @@ public class PlaylistService extends IntentService {
     private static final String YOUTUBE_END_URL = "&orderby=relevance&start-index=1&max-results=10&v=2&format=5&alt=json";
     private static final String YOUTUBE_END_FORTY_URL = "&orderby=relevance&start-index=1&max-results=40&v=2&format=5&alt=json";
     private static final String YOUTUBE_VIDEO_URL = "https://youtube.com/watch?v=";
+    
+    private static final String REDDIT_URL = "http://reddit.com";
+    private static final String REDDIT_END_URL = "/hot.json?limit=100";
 	private static final String TAG = "PlaylistService";
     private ArrayList<VideoClass> videos;
 	private ArrayList<String> artistSongList;
@@ -131,10 +136,12 @@ public class PlaylistService extends IntentService {
         	processEchoNestJSON(artist);
 		} else if(type.equals("genre")) {
 			processGenreJSON(artist);
-		}
-		else {
+		} else if(type.equals("reddit")) {
+			processRedditJSON(artist);
+		} else if(type.equals("similar")) {
 			processSimilarJSON(artist);
 		}
+
 		
 		
 		//this.stopSelf();
@@ -160,6 +167,7 @@ public class PlaylistService extends IntentService {
         return new DefaultHttpClient(conMgr, params);
     }
     
+
     public String getPage(String URLToFetch) {
         // TODO Auto-generated method stub
         
@@ -186,6 +194,67 @@ public class PlaylistService extends IntentService {
         
         return pageHTML;
     
+    }
+    
+    public void processRedditJSON(String artist) {
+    	
+    	Log.d(TAG, "Currently in processRedditJSON");
+    	String searchURL = REDDIT_URL + artist + REDDIT_END_URL;
+    	
+    	String result = getPage(searchURL);
+    	
+    	processSubredditJSON(result);
+    }
+    
+    public void processSubredditJSON(String result) {
+    	
+    	Log.d(TAG, "Currently in processSubredditJSON");
+    	JSONObject object;
+		try {
+			object = new JSONObject(result);
+	    	JSONObject data = object.getJSONObject("data");
+	    	JSONArray children = data.getJSONArray("children");
+	    	
+	    	for(int i = 0; i < children.length(); ++i) {
+	    		JSONObject child = children.getJSONObject(i);
+	    		JSONObject childData = child.getJSONObject("data");
+	    		String domain = childData.getString("domain");
+	    		Log.d(TAG, "Domain:  " + domain);
+	    		if(domain.equals("youtube.com")) {
+	    			Log.d(TAG, "Trying out JSON Media parsing . . . ");
+		    		if(!childData.isNull("media")) {
+
+		    			JSONObject media = childData.getJSONObject("media");
+		    			JSONObject embed = media.getJSONObject("oembed");
+			    		String title = embed.getString("title");
+			    		String type = "reddit";
+			    		Log.d(TAG, "Processing YouTube JSON for " + title);
+			    		processYoutubeJSON(title, type);
+		    		} else {
+		    			Log.d(TAG, "Null tag encountered.");
+		    		}
+	
+	    		}
+
+	    		
+	    		if(videos.size() == 40) {
+	    			break;
+	    		}
+	    	}
+	    	
+			Bundle b = new Bundle();
+			b.putSerializable("videos", videos);
+			b.putString("artist", artist);
+			Log.d(TAG, "Sending over the videos!");
+			receiver.send(STATUS_FINISHED, b);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+            Log.e("JSON Parser", "Error parsing data [" + e.getMessage()+"] ");
+			e.printStackTrace();
+		}
+		
+
+
     }
     
     public void processGenreJSON(String genre) {
@@ -342,10 +411,6 @@ public class PlaylistService extends IntentService {
 
 	public void processYoutubeJSON(String result, String type) {
 	    // TODO Auto-generated method stub
-		
-		
-
-			
 			YouTubeService service = new YouTubeService("Tubalr");
 			YouTubeQuery query;
 			try {
@@ -428,6 +493,15 @@ public class PlaylistService extends IntentService {
 		                    
 
 			            }
+		            }
+		            
+		            else if(type.equals("reddit")) {
+		            	if(isMusic(entry) && isNotLive(entry)) {
+		            		videos.add(newVideo);
+		            		
+		            		Log.d("TUB", "From the reddit type.");
+		            		break;
+		            	}
 		            }
 		            
 		            else if(type.equals("youtube")) {

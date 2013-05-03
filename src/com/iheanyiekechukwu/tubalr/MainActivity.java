@@ -4,12 +4,14 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.app.ActivityManager.RunningServiceInfo;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -22,6 +24,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.Fragment;
@@ -29,12 +32,10 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
-import android.support.v4.view.ViewPager.OnPageChangeListener;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup.LayoutParams;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -50,17 +51,19 @@ import com.actionbarsherlock.app.ActionBar.Tab;
 import com.actionbarsherlock.app.ActionBar.TabListener;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
-import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 import com.bugsense.trace.BugSenseHandler;
 import com.bugsnag.android.Bugsnag;
 import com.flurry.android.FlurryAgent;
-import com.viewpagerindicator.TabPageIndicator;
+import com.iheanyiekechukwu.tubalr.UserPlaylist.OnFragmentInteractionListener;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 import com.viewpagerindicator.TitlePageIndicator;
 
-public class MainActivity extends SherlockFragmentActivity implements OnClickListener {
+public class MainActivity extends SherlockFragmentActivity implements OnClickListener, OnFragmentInteractionListener {
 
-	private static final String[] CONTENT = new String[] {"Genres", "Subreddits"};
+	private static final String[] CONTENT = new String[] {"Genres", "Subreddits", "My Playlists"};
 	
 	/**
 	 * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -95,6 +98,10 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
     private ProgressDialog prog;
     
     private boolean paused = false;
+    
+    private static Integer userID = -1;
+    
+    private static String userToken = "";
     
     
     // EchoNest URLs
@@ -163,6 +170,9 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 	public static final String NEW_SONGS = INTENT_BASE_NAME + ".NEW_SONGS";
 
 	MyPageAdapter pageAdapter;
+	
+	boolean runUnregister = true;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -196,6 +206,7 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 		//genreTab.setText("Genres");
 		//genreTab.setTabListener(this);
 		Tab redditTab = bar.newTab();
+		Tab userTab = bar.newTab();
 		
 		getSupportActionBar().setDisplayHomeAsUpEnabled(false);
 		getSupportActionBar().setDisplayShowTitleEnabled(true);
@@ -208,11 +219,19 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
         getSupportActionBar().setBackgroundDrawable(d);
         
         context = getBaseContext();
+        
+		if((getIntent().getFlags() & Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT) != 0) {
+			runUnregister = false;
+			finish();
+			return;
+		}
+		
 		//redditTab.setText("Subreddits");
 		//redditTab.setTabListener(this);
 		
 		mSectionsPagerAdapter.addTab(genreTab, Genres.class, null);
 		mSectionsPagerAdapter.addTab(redditTab, Subreddit.class, null);
+		mSectionsPagerAdapter.addTab(userTab, UserPlaylist.class, null);
 		mSectionsPagerAdapter.notifyDataSetChanged();
 		
 		TitlePageIndicator indicator = (TitlePageIndicator) findViewById(R.id.indicator);
@@ -292,10 +311,20 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 			    	registerReceiver(musicServiceBroadcastReceiver, filter);
 	    			
 	    			//artist = data.getStringExtra("artist");
-			    	Log.d(TAG, "DONE REGISTERING JUNTS");
-			    	
-			    	
+			    	Log.d(TAG, "DONE REGISTERING JUNTS"); 	
 	    	}
+	    		
+			case 2:
+				if(resultCode == RESULT_OK) {
+					userID = data.getIntExtra("userid", -1);
+					userToken = data.getStringExtra("token");
+					
+					UserHelper.userInfo[UserHelper.USER] = Integer.toString(userID);
+					UserHelper.userInfo[UserHelper.TOKEN] = userToken; 
+					
+					Toast.makeText(context, "Successfully logged in. . . Token: " + Integer.toString(userID) + " " + userToken, Toast.LENGTH_SHORT).show();
+				}
+				
 	    		
 	    		break;
 		}
@@ -314,6 +343,9 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 		 
 		  fList.add(Genres.newInstance("Genres", "Test"));
 		  fList.add(Subreddit.newInstance("Subreddit", "Test")); 
+		  fList.add(UserPlaylist.newInstance(Integer.toString(userID), userToken));
+		  
+		  //}
 		  //fList.add(MyFragment.newInstance("Fragment 3"));
 		 
 		  return fList;
@@ -537,7 +569,7 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
         }
         
         public int getCount() {
-        	return 2;
+        	return 3;
             //return mTabs.size();
         }
 		
@@ -552,8 +584,10 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 			
 			if(position == 0) {
 				return Genres.newInstance("Swag", "Swoop");
-			} else {
+			} else if(position == 1) {
 				return Subreddit.newInstance("Swag", "Swoop");
+			} else {
+				return UserPlaylist.newInstance(UserHelper.userInfo[UserHelper.USER], UserHelper.userInfo[UserHelper.TOKEN]);
 			}
 		}
 
@@ -616,7 +650,23 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 	    		showSearchDialog();
 	    		return true;
 	    		
-	    	
+	    	case R.id.action_login:
+	    		
+	    		Intent loginIntent = new Intent(this, LoginActivity.class);
+	    		
+	    		startActivityForResult(loginIntent, 2);
+	    		return true;
+	    		
+	    	case R.id.menu_add:
+	    		
+	    		if(UserHelper.userLoggedIn()) {
+		    		showAddDialog();
+		    		
+
+	    		} else {
+	    			Toast.makeText(this, "Please log in first.", Toast.LENGTH_SHORT).show();
+	    		}
+	    		return true;
 	    	
 	    	default:
 	    		
@@ -625,7 +675,77 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
     	}
     }
     
-    @Override
+    private void showAddDialog() {
+		// TODO Auto-generated method stub
+    	AlertDialog.Builder alert = new AlertDialog.Builder(this);
+		
+		//alert.setTitle("");
+		alert.setMessage("Create a New Playlist:");
+		final EditText input = new EditText(this);
+		//String artist = "";
+		alert.setView(input);
+		alert.setPositiveButton("Add", new DialogInterface.OnClickListener() {
+			
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				// TODO Auto-generated method stub
+				String playlistName = input.getEditableText().toString().trim();
+				
+        		dialog.dismiss();
+
+				StringBuilder stringBuilder = new StringBuilder();
+				stringBuilder.append("http://www.tubalr.com/api/playlist/create?playlist_name=");
+				stringBuilder.append(URLEncoder.encode(playlistName));
+				String createURL = stringBuilder.toString();
+	            
+				AsyncHttpClient client = new AsyncHttpClient();
+	          
+				
+				RequestParams params = new RequestParams();
+				params.put("auth_token", UserHelper.userInfo[UserHelper.TOKEN]);
+	            
+				client.post(createURL, params, new JsonHttpResponseHandler() {
+	            	public void onSuccess(JSONObject result) {
+	            		
+	            		String name = "";
+						try {
+							name = result.getString("name");
+
+						} catch (JSONException e) {
+							// TODO Auto-generated catch block
+							
+							Toast.makeText(getBaseContext(), "Error creating a new playlist!", Toast.LENGTH_SHORT).show();
+							e.printStackTrace();
+						}
+	            		
+	            		Toast.makeText(getBaseContext(), "Playlist \"" + name + "\" successfully created", Toast.LENGTH_SHORT).show();
+
+
+	            	}
+
+	            });
+	            
+
+
+
+			}
+		});
+		
+		alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+			
+			
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				// TODO Auto-generated method stub
+				dialog.cancel();
+}
+		});
+    
+		AlertDialog showAlert = alert.create();
+		showAlert.show();
+	}
+
+	@Override
     public void onPause() {
 	    //super.onPause();
 	    super.onPause();
@@ -638,7 +758,7 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 		    musicService.setNotificationStatus(true);
 	    }
 
-		 if(musicServiceBroadcastReceiver != null) {
+		 if(musicServiceBroadcastReceiver != null && runUnregister) {
 			  unregisterReceiver(musicServiceBroadcastReceiver);
 			  musicServiceBroadcastReceiver = null;
 		 }
@@ -660,7 +780,7 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 	    super.onDestroy();
 
 	    
-		  if(musicServiceBroadcastReceiver != null) {
+		  if(musicServiceBroadcastReceiver != null && runUnregister) {
 			  unregisterReceiver(musicServiceBroadcastReceiver);
 			  musicServiceBroadcastReceiver = null;
 		  }
@@ -683,11 +803,9 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 		  ForegroundHelper.activityStates[ForegroundHelper.MAINACT] = true;
 
 		  
-		  if(musicService != null || mBound) {
+		  if(musicService != null) {
 			  musicService.updateButtons();
-		      if(mBound) {
-		    	  musicService.setNotificationStatus(false);
-		      }
+
 		  }
 		  
 		  	if(mBound) {
@@ -715,6 +833,8 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 				
 				currentArtist.setText(musicService.getCurrentVideo().getTitle());
 				MusicService.setMainActivity(MainActivity.this);
+		    	musicService.setNotificationStatus(false);
+
 
 		  	}
 
@@ -760,6 +880,12 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 		default: 
 			break;
 		}
+		
+	}
+
+	@Override
+	public void onFragmentInteraction(Uri uri) {
+		// TODO Auto-generated method stub
 		
 	}
 

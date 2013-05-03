@@ -1343,7 +1343,8 @@ containing a value of this type.
         public static final int abs__title=0x7f050020;
         public static final int abs__titleDivider=0x7f050021;
         public static final int abs__up=0x7f05000b;
-        public static final int action_settings=0x7f050065;
+        public static final int action_login=0x7f050068;
+        public static final int action_settings=0x7f050067;
         public static final int addButton=0x7f050055;
         public static final int allGenreList=0x7f05005f;
         public static final int artistNameText=0x7f05003a;
@@ -1353,7 +1354,7 @@ containing a value of this type.
         public static final int disableHome=0x7f050009;
         public static final int edit_query=0x7f05002c;
         public static final int email=0x7f050042;
-        public static final int expandable_list=0x7f050060;
+        public static final int expandable_list=0x7f050062;
         public static final int homeAsUp=0x7f050006;
         public static final int homeFixedListView=0x7f050038;
         public static final int homeNextButton=0x7f05003e;
@@ -1369,10 +1370,10 @@ containing a value of this type.
         public static final int login_status=0x7f05003f;
         public static final int login_status_message=0x7f050040;
         public static final int maxText=0x7f05004f;
-        public static final int menu_add=0x7f050063;
-        public static final int menu_forgot_password=0x7f050064;
-        public static final int menu_search=0x7f050062;
-        public static final int menu_settings=0x7f050061;
+        public static final int menu_add=0x7f050065;
+        public static final int menu_forgot_password=0x7f050066;
+        public static final int menu_search=0x7f050064;
+        public static final int menu_settings=0x7f050063;
         public static final int nextButton=0x7f050054;
         public static final int none=0x7f050010;
         public static final int normal=0x7f050001;
@@ -1382,6 +1383,7 @@ containing a value of this type.
         public static final int playButton=0x7f050052;
         public static final int playlistView=0x7f050057;
         public static final int previousButton=0x7f050051;
+        public static final int redditProgressBar=0x7f050061;
         public static final int rowLayout=0x7f050059;
         public static final int seekLayout=0x7f05004c;
         public static final int showCustom=0x7f050008;
@@ -1401,6 +1403,7 @@ containing a value of this type.
         public static final int tvGroup=0x7f05005d;
         public static final int underline=0x7f050012;
         public static final int useLogo=0x7f050004;
+        public static final int usersPlaylists=0x7f050060;
         public static final int videoImageView=0x7f050049;
         public static final int videoLayout=0x7f050048;
         public static final int videoStream=0x7f05004a;
@@ -1449,10 +1452,11 @@ containing a value of this type.
         public static final int expand_list_group_item=0x7f03001f;
         public static final int fragment_genres=0x7f030020;
         public static final int fragment_main_dummy=0x7f030021;
-        public static final int fragment_subreddit=0x7f030022;
-        public static final int sherlock_spinner_dropdown_item=0x7f030023;
-        public static final int sherlock_spinner_item=0x7f030024;
-        public static final int topheader=0x7f030025;
+        public static final int fragment_playlist=0x7f030022;
+        public static final int fragment_subreddit=0x7f030023;
+        public static final int sherlock_spinner_dropdown_item=0x7f030024;
+        public static final int sherlock_spinner_item=0x7f030025;
+        public static final int topheader=0x7f030026;
     }
     public static final class menu {
         public static final int activity_home=0x7f0d0000;

@@ -17,6 +17,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.OnChildClickListener;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.bugsense.trace.BugSenseHandler;
@@ -42,6 +43,7 @@ public class Subreddit extends Fragment implements OnClickListener, OnChildClick
 	// TODO: Rename and change types of parameters
 	private String mParam1;
 	private String mParam2;
+	private ProgressBar progress;
 	
 	private  ExpandListAdapter expAdapter;
 	private ArrayList<ListGroup> listItems;
@@ -140,10 +142,15 @@ public class Subreddit extends Fragment implements OnClickListener, OnChildClick
 		listItems = new ArrayList<ListGroup>();
 		ArrayList<String> children = new ArrayList<String>();
 
+		progress = (ProgressBar) v.findViewById(R.id.redditProgressBar);
+
+
+		
 		expListView = (ExpandableListView) v.findViewById(R.id.expandable_list);
 		expListView.setOnChildClickListener(this);
-		//listItems = SetStandardGroups();
-
+		
+		expListView.setVisibility(View.GONE);
+		
 		
 		AsyncHttpClient.getDefaultInstance().get("http://www.tubalr.com/api/library.json", new AsyncHttpClient.StringCallback() {
 
@@ -157,6 +164,8 @@ public class Subreddit extends Fragment implements OnClickListener, OnChildClick
 				}
 				
 				processTubalrJSON(result);
+				progress.setVisibility(View.GONE);
+				expListView.setVisibility(View.VISIBLE);
 				
 			}
 			

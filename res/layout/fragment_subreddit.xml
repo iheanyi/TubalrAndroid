@@ -7,11 +7,17 @@
 
     <!-- TODO: Update blank fragment layout -->
 
+    <ProgressBar
+        android:id="@+id/redditProgressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" 
+        android:layout_gravity="center_vertical|center_horizontal"/>
+
  <ExpandableListView
      android:id="@+id/expandable_list"
      android:layout_width="fill_parent"
      android:layout_height="fill_parent"
      android:childIndicator="@drawable/bg_noise"
-     android:drawSelectorOnTop="true" />
+     android:drawSelectorOnTop="true"/>
  
 </LinearLayout>

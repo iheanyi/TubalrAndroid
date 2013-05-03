@@ -174,6 +174,8 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	public static final String PAUSE_TRACK = INTENT_BASE_NAME + ".PAUSE_TRACK";
 	public static final String PLAY_SELECT = INTENT_BASE_NAME + ".PLAY_SELECT";
 	public static final String NEW_SONGS = INTENT_BASE_NAME + ".NEW_SONGS";
+	
+	boolean runUnregister = true;
    
 	
 	@SuppressWarnings("deprecation")
@@ -203,6 +205,13 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		/*if (savedInstanceState != null) {
 			videoList = (ArrayList<VideoClass>) savedInstanceState.getSerializable("videos");
 		}*/
+		
+		
+		if((getIntent().getFlags() & Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT) != 0) {
+			runUnregister = false;
+			finish();
+			return;
+		}
 		
 		intent = this.getIntent();
 		
@@ -1274,7 +1283,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	 protected void onDestroy() {
 		 super.onDestroy();
 		 
-		 if(musicServiceBroadcastReceiver != null) {
+		 if(musicServiceBroadcastReceiver != null && runUnregister) {
 			 unregisterReceiver(musicServiceBroadcastReceiver);
 			 musicServiceBroadcastReceiver = null;
 		 }

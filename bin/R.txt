@@ -403,7 +403,8 @@ int id abs__textButton 0x7f050018
 int id abs__title 0x7f050020
 int id abs__titleDivider 0x7f050021
 int id abs__up 0x7f05000b
-int id action_settings 0x7f050065
+int id action_login 0x7f050068
+int id action_settings 0x7f050067
 int id addButton 0x7f050055
 int id allGenreList 0x7f05005f
 int id artistNameText 0x7f05003a
@@ -413,7 +414,7 @@ int id currentTextView 0x7f05004b
 int id disableHome 0x7f050009
 int id edit_query 0x7f05002c
 int id email 0x7f050042
-int id expandable_list 0x7f050060
+int id expandable_list 0x7f050062
 int id homeAsUp 0x7f050006
 int id homeFixedListView 0x7f050038
 int id homeNextButton 0x7f05003e
@@ -429,10 +430,10 @@ int id login_form 0x7f050041
 int id login_status 0x7f05003f
 int id login_status_message 0x7f050040
 int id maxText 0x7f05004f
-int id menu_add 0x7f050063
-int id menu_forgot_password 0x7f050064
-int id menu_search 0x7f050062
-int id menu_settings 0x7f050061
+int id menu_add 0x7f050065
+int id menu_forgot_password 0x7f050066
+int id menu_search 0x7f050064
+int id menu_settings 0x7f050063
 int id nextButton 0x7f050054
 int id none 0x7f050010
 int id normal 0x7f050001
@@ -442,6 +443,7 @@ int id pauseButton 0x7f050053
 int id playButton 0x7f050052
 int id playlistView 0x7f050057
 int id previousButton 0x7f050051
+int id redditProgressBar 0x7f050061
 int id rowLayout 0x7f050059
 int id seekLayout 0x7f05004c
 int id showCustom 0x7f050008
@@ -461,6 +463,7 @@ int id tvChild 0x7f05005c
 int id tvGroup 0x7f05005d
 int id underline 0x7f050012
 int id useLogo 0x7f050004
+int id usersPlaylists 0x7f050060
 int id videoImageView 0x7f050049
 int id videoLayout 0x7f050048
 int id videoStream 0x7f05004a
@@ -505,10 +508,11 @@ int layout expand_list_child_item 0x7f03001e
 int layout expand_list_group_item 0x7f03001f
 int layout fragment_genres 0x7f030020
 int layout fragment_main_dummy 0x7f030021
-int layout fragment_subreddit 0x7f030022
-int layout sherlock_spinner_dropdown_item 0x7f030023
-int layout sherlock_spinner_item 0x7f030024
-int layout topheader 0x7f030025
+int layout fragment_playlist 0x7f030022
+int layout fragment_subreddit 0x7f030023
+int layout sherlock_spinner_dropdown_item 0x7f030024
+int layout sherlock_spinner_item 0x7f030025
+int layout topheader 0x7f030026
 int menu activity_home 0x7f0d0000
 int menu activity_login 0x7f0d0001
 int menu main 0x7f0d0002

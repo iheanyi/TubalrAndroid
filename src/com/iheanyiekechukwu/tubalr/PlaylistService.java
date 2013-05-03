@@ -311,7 +311,11 @@ public class PlaylistService extends IntentService {
 					type = "similar";
 					//search_url = a.getName() + " - " + song;
 					search_url = a.getName();
-					processYoutubeJSON(search_url, type);	
+					processYoutubeJSON(search_url, type);
+				     if(videos.size() == 15) {
+				    	 Log.d(TAG, "Shortening video span for demo . . .");
+				    	 break;
+				     }
 				}
 				
 
@@ -905,6 +909,10 @@ public class PlaylistService extends IntentService {
 					
 					Log.d(TAG, "Processing Youtube JSON for " + search);
 					processYoutubeJSON(search, type);
+				    if(videos.size() == 15) {
+				    	 Log.d(TAG, "Shortening video span for demo . . .");
+				    	 break;
+				    }
 				}
 			} else {
 				
@@ -914,6 +922,8 @@ public class PlaylistService extends IntentService {
 		     String type = "youtube";
 		     
 		     processYoutubeJSON(artist, type);
+		     
+
 		     //processYoutubeJSON(html, type);
 		        	//YoutubeTask myTask = new YoutubeTask();
 		        	//myTask.execute(yt_short_url);
@@ -1120,6 +1130,7 @@ public class PlaylistService extends IntentService {
 							
 							Log.d(TAG, "Processing Youtube JSON for " + search);
 							processYoutubeJSON(search, type);
+							
 						}
 					} else {
 				     String short_search = artist;

@@ -69,7 +69,7 @@
             android:name="com.iheanyiekechukwu.tubalr.PlaylistActivity"
             android:configChanges="keyboardHidden|orientation"
             android:label="@string/title_activity_playlist"
-            android:parentActivityName="com.iheanyiekechukwu.tubalrMainActivity"
+            android:parentActivityName="com.iheanyiekechukwu.tubalr.MainActivity"
             android:screenOrientation="portrait" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"

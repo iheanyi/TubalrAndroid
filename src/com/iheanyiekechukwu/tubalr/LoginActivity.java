@@ -1,20 +1,31 @@
 
 package com.iheanyiekechukwu.tubalr;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.loopj.android.http.PersistentCookieStore;
+
+
 
 /**
  * Activity which displays a login screen to the user, offering registration as
@@ -130,12 +141,8 @@ public class LoginActivity extends Activity {
             mEmailView.setError(getString(R.string.error_field_required));
             focusView = mEmailView;
             cancel = true;
-        } else if (!mEmail.contains("@")) {
-            mEmailView.setError(getString(R.string.error_invalid_email));
-            focusView = mEmailView;
-            cancel = true;
-        }
-
+        } 
+        
         if (cancel) {
             // There was an error; don't attempt login and focus the first
             // form field with an error.
@@ -145,8 +152,113 @@ public class LoginActivity extends Activity {
             // perform the user login attempt.
             mLoginStatusMessageView.setText(R.string.login_progress_signing_in);
             showProgress(true);
-            mAuthTask = new UserLoginTask();
-            mAuthTask.execute((Void) null);
+            
+            
+            Log.d("TAG", mEmail);
+            Log.d("TAG", mPassword);
+            String loginURL = "http://www.tubalr.com/api/sessions.json?email_or_username=" + mEmail + "&password=" + mPassword;
+
+
+            String relativeURL = "api/sessions.json?email_or_username=" + mEmail + "&password=" + mPassword;
+            
+            
+            AsyncHttpClient client = new AsyncHttpClient();
+            PersistentCookieStore myCookieStore = new PersistentCookieStore(this);
+            client.setCookieStore(myCookieStore);
+            
+            client.post(loginURL, null, new JsonHttpResponseHandler() {
+            	public void onSuccess(JSONObject result) {
+            		showProgress(false);
+					String token = "";
+					Integer userID = -1;
+					try {
+						token = result.getString("token");
+						userID = result.getInt("id");
+
+					} catch (JSONException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+
+					UserHelper.userInfo[UserHelper.USER] = Integer.toString(userID);
+					UserHelper.userInfo[UserHelper.TOKEN] = token;
+					Intent returnIntent = new Intent();
+					returnIntent.putExtra("token", token);
+					returnIntent.putExtra("userid", userID);
+					setResult(RESULT_OK, returnIntent);
+					finish();
+            	}
+            });
+            
+           /* TubalrRestClient.post(relativeURL, null, new JsonHttpResponseHandler() {
+            	@Override
+            	public void onSuccess(JSONObject result) {
+            		showProgress(false);
+					String token = "";
+					Integer userID = -1;
+					try {
+						token = result.getString("token");
+						userID = result.getInt("id");
+
+					} catch (JSONException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+
+					UserHelper.userInfo[UserHelper.USER] = Integer.toString(userID);
+					UserHelper.userInfo[UserHelper.TOKEN] = token;
+					Intent returnIntent = new Intent();
+					returnIntent.putExtra("token", token);
+					returnIntent.putExtra("userid", userID);
+					setResult(RESULT_OK, returnIntent);
+					finish();
+            	}
+            });*/
+
+            
+            /*AsyncHttpClient.getDefaultInstance().execute(post, new StringCallback() {
+
+    			@Override
+    			public void onCompleted(Exception e, AsyncHttpResponse source,
+    					String result) {
+    				// TODO Auto-generated method stub
+    				if(e != null) {
+    		            e.printStackTrace();
+    		            return;
+    				}
+    				
+    				
+    	            showProgress(false);
+    	            JSONObject jsonResult;
+    	            try {
+						jsonResult = new JSONObject(result);
+						String message = jsonResult.getString("message");
+						if(message != null) {
+			                mPasswordView.setError(getString(R.string.error_incorrect_password));
+			                mPasswordView.requestFocus();
+						} else {
+							String token = jsonResult.getString("token");
+							Integer userID = jsonResult.getInt("id");
+							Intent returnIntent = new Intent();
+							returnIntent.putExtra("token", token);
+							returnIntent.putExtra("userid", userID);
+							setResult(RESULT_OK, returnIntent);
+							finish();
+						}
+					} catch (JSONException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+    				//processTubalrJSON(result);
+    				//progress.setVisibility(View.GONE);
+    				//expListView.setVisibility(View.VISIBLE);
+    				
+    			}
+    			
+    			
+    		});*/
+            //mAuthTask = new UserLoginTask();
+           // mAuthTask.execute((Void) null);
         }
     }
 

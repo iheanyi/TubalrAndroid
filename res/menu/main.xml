@@ -28,5 +28,10 @@
           android:icon="@drawable/plus"
           android:title="Add Playlist"
           android:showAsAction="ifRoom|withText" />
+    
+    <item android:id="@+id/menu_refresh"
+          android:icon = "@drawable/navigation_refresh"
+          android:title = "Refresh"
+          android:showAsAction="ifRoom|withText" />
 
 </menu>

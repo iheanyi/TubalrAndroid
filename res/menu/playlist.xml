@@ -1,11 +1,16 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <item
-        android:id="@+id/menu_settings"
+        android:id="@+id/action_settings"
         android:orderInCategory="100"
-        android:showAsAction="ifRoom"
-        android:icon="@drawable/settings"
-        android:title="@string/menu_settings"/>
+        android:showAsAction="never"
+        android:title="@string/action_settings"/>
+    
+    <item
+        android:id="@+id/action_login"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Login"/>
     
     <item android:id="@+id/menu_search"
           android:icon="@drawable/search"
@@ -14,6 +19,6 @@
     
     <item android:id="@+id/menu_add"
           android:icon="@drawable/plus"
-          android:title="Add Playlist"
+          android:title="Add to Playlist"
           android:showAsAction="ifRoom|withText" />
 </menu>

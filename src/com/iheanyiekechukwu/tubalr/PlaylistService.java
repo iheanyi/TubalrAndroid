@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -31,22 +31,21 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import android.app.IntentService;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.ResultReceiver;
-import android.os.StrictMode;
 import android.util.Log;
 
 import com.bugsense.trace.BugSenseHandler;
 import com.bugsnag.android.Bugsnag;
 import com.echonest.api.v4.Artist;
-import com.echonest.api.v4.BasicPlaylistParams;
-import com.echonest.api.v4.BasicPlaylistParams.PlaylistType;
 import com.echonest.api.v4.EchoNestAPI;
 import com.echonest.api.v4.EchoNestException;
+import com.echonest.api.v4.Image;
 import com.echonest.api.v4.Playlist;
 import com.echonest.api.v4.PlaylistParams;
 import com.echonest.api.v4.Song;
@@ -59,8 +58,6 @@ import com.google.gdata.data.youtube.VideoEntry;
 import com.google.gdata.data.youtube.VideoFeed;
 import com.google.gdata.data.youtube.YouTubeNamespace;
 import com.google.gdata.util.ServiceException;
-import com.koushikdutta.async.http.AsyncHttpClient;
-import com.koushikdutta.async.http.AsyncHttpResponse;
 
 public class PlaylistService extends IntentService {
 	
@@ -82,6 +79,8 @@ public class PlaylistService extends IntentService {
 	private static final String TAG = "PlaylistService";
     private ArrayList<VideoClass> videos;
 	private ArrayList<String> artistSongList;
+	
+	public String imgURL;
 	
 	private String artist;
 	public static final String TRANSACTION_DONE = "com.iheanyiekechukwu.tubalr.TRANSACTION_DONE";
@@ -140,6 +139,8 @@ public class PlaylistService extends IntentService {
 			processRedditJSON(artist);
 		} else if(type.equals("similar")) {
 			processSimilarJSON(artist);
+		} else if(type.equals("user")) {
+			processUserJSON(artist);
 		}
 
 		
@@ -151,7 +152,9 @@ public class PlaylistService extends IntentService {
 		
 	}
 	
-    private HttpClient createHttpsClient()
+
+
+	private HttpClient createHttpsClient()
     {
         //Toast.makeText(context, "HTTP Client Created", Toast.LENGTH_SHORT);
         HttpParams params = new BasicHttpParams();
@@ -230,6 +233,8 @@ public class PlaylistService extends IntentService {
 			    		String type = "reddit";
 			    		Log.d(TAG, "Processing YouTube JSON for " + title);
 			    		processYoutubeJSON(title, type);
+			    		
+			    		
 		    		} else {
 		    			Log.d(TAG, "Null tag encountered.");
 		    		}
@@ -237,7 +242,7 @@ public class PlaylistService extends IntentService {
 	    		}
 
 	    		
-	    		if(videos.size() == 40) {
+	    		if(videos.size() == 10) {
 	    			break;
 	    		}
 	    	}
@@ -257,6 +262,51 @@ public class PlaylistService extends IntentService {
 
     }
     
+    public void processUserJSON(String artist) {
+		// TODO Auto-generated method stub
+		String url = "http://www.tubalr.com/api/playlist/" + artist + ".json";
+		
+		Log.d(TAG, "Playlist ID: " + artist);
+		String html = getPage(url);
+		
+		processPlaylistJSON(html);
+	}
+    
+    public void processPlaylistJSON(String html) {
+    	
+    	JSONTokener tokener = new JSONTokener(html.substring(1		));
+
+    	JSONArray results;
+    	
+    	System.out.println(html);
+    	try {
+			results = new JSONArray(html);
+			
+			for(int i = 0; i < results.length(); ++i) {
+				JSONObject entry = results.getJSONObject(i);
+				String type = "user";
+				String title = entry.getString("video_title");
+				
+				processYoutubeJSON(title, type);
+				
+				if(videos.size() == 10) {
+					Log.d(TAG, "Shortening playlist size for purposes of demo...");
+					break;
+				}
+			}
+			
+	    	
+			Bundle b = new Bundle();
+			b.putSerializable("videos", videos);
+			b.putString("artist", artist);
+			receiver.send(STATUS_FINISHED, b);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+    }
+    
     public void processGenreJSON(String genre) {
 		EchoNestAPI echoNest = new EchoNestAPI("OYJRQNQMCGIOZLFIW");
     	PlaylistParams params = new PlaylistParams();
@@ -271,6 +321,10 @@ public class PlaylistService extends IntentService {
 	    			String type = "genre";
 	    			Log.d(TAG, "Processing YouTube JSON for " + search);
 	    			processYoutubeJSON(search, type);
+	    			
+	    			if(videos.size() == 10) {
+	    				break;
+	    			}
 	    		}
 	    }
 		} catch (EchoNestException e) {
@@ -297,14 +351,22 @@ public class PlaylistService extends IntentService {
 			if(artists.size() > 0) {
 				Artist searched = artists.get(0);
 				String first = searched.getSongs().get(0).getTitle();
+				imgURL = searched.getImages(0, 5).get(0).getURL();
 				
 				String search_url = searched + " - " + first;
 				List<Artist> similar = searched.getSimilar(40);
 				
 				String type = "just";
+				
+
 				processYoutubeJSON(search_url, type);
 				
+				Random rand = new Random();
 				for(Artist a : similar) {
+					List<Image> images = a.getImages(0, 20);
+					int choice = rand.nextInt(images.size());
+					Image image = images.get(choice);
+					imgURL = image.getURL();
 					//List<Song> songs = a.getSongs();
 					//Collections.shuffle(songs);
 					//String song = songs.get(0).getTitle();
@@ -312,6 +374,7 @@ public class PlaylistService extends IntentService {
 					//search_url = a.getName() + " - " + song;
 					search_url = a.getName();
 					processYoutubeJSON(search_url, type);
+					imgURL = "";
 				     if(videos.size() == 15) {
 				    	 Log.d(TAG, "Shortening video span for demo . . .");
 				    	 break;
@@ -432,7 +495,7 @@ public class PlaylistService extends IntentService {
 				query.setSafeSearch(YouTubeQuery.SafeSearch.NONE);
 				Query.CategoryFilter musicFilter = new Query.CategoryFilter();
 				musicFilter.addCategory(new Category(YouTubeNamespace.CATEGORY_SCHEME, "Music"));
-				if(type.equals("just") || type.equals("similar")) {
+				if(type.equals("just") || type.equals("similar") || type.equals("genre") || type.equals("user")) {
 					query.addCategoryFilter(musicFilter);
 				}
 				
@@ -444,8 +507,7 @@ public class PlaylistService extends IntentService {
 					String id = entry.getMediaGroup().getVideoId();
 					String title = entry.getTitle().getPlainText();
 					Log.d(TAG, "TITLE: " + title);
-					String thumbnailString = entry.getMediaGroup().getThumbnails().get(3).getUrl();
-					
+					String thumbnailString ="http://i.ytimg.com/vi/" + id + "/0.jpg";				
 					
 					Log.d(TAG, "ID: " + id);
 					VideoClass newVideo = new VideoClass(id, title, thumbnailString);
@@ -473,7 +535,7 @@ public class PlaylistService extends IntentService {
 			            }
 		            }
 		            
-		            else if(type.equals("genre")) {
+		            else if(type.equals("genre") || type.equals("user")) {
 		            	if(isMusic(entry) && isNotLive(entry)) {
 		            		videos.add(newVideo);
 		            		
@@ -897,19 +959,32 @@ public class PlaylistService extends IntentService {
 			if(artists.size() > 10) {
 				Artist searched = artists.get(0);
 				
+				//List<Image> images = searched.getImages(0, 20);
+				
+
+				
 				String name = searched.getName();
 				List<Song> justSongs = searched.getSongs(0, 40);
 				
 				System.out.print(Integer.toString(justSongs.size()));
 				Log.d(TAG, "Size of Songs: " + Integer.toString(justSongs.size()));
 				
+				//Random rand = new Random();
 				for(int i = 0; i < justSongs.size(); ++i) {
+					
+					//int choice = rand.nextInt(images.size());
+					/*Image image = images.get(choice);
+					String url = image.getURL();
+					imgURL = url;
+					System.out.println("IMAGE URL JUNTS" + imgURL);*/
+					
 					String search = name + " - " + justSongs.get(i).getTitle();
 					String type = "just";
 					
 					Log.d(TAG, "Processing Youtube JSON for " + search);
 					processYoutubeJSON(search, type);
-				    if(videos.size() == 15) {
+					//imgURL = "";
+				    if(videos.size() == 10) {
 				    	 Log.d(TAG, "Shortening video span for demo . . .");
 				    	 break;
 				    }

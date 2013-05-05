@@ -119,6 +119,8 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
     
     private String artistName;
     
+    boolean artistClicked = false;
+    
     private ArrayList<VideoClass> playlist;
     
     private TextView currentArtist;
@@ -198,6 +200,8 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 		//mViewPager.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT));
 		mViewPager.setAdapter(mSectionsPagerAdapter);
 		
+		mViewPager.setOffscreenPageLimit(mSectionsPagerAdapter.getCount() - 1);
+		
 		
 		//bar.addTab(bar.newTab().setText("Genres"), Genres.class, null);
 
@@ -246,6 +250,8 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 		
 		if(!isMyServiceRunning()) {
 			controlLayout.setVisibility(View.GONE);
+		} else {
+			controlLayout.setVisibility(View.VISIBLE);
 		}
 		
 		prevButton = (ImageButton) findViewById(R.id.homePrevButton);
@@ -280,7 +286,7 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 		
 		switch(requestCode) {
 			case 1:
-	    		if(resultCode == RESULT_OK) {
+	    		if(resultCode == RESULT_FIRST_USER) {
 	    			
 	    			Log.d(TAG, "Activity for Result! RESULT OK!");	
 	    			videos = (ArrayList<VideoClass>) data.getSerializableExtra("videos");
@@ -311,7 +317,9 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 			    	registerReceiver(musicServiceBroadcastReceiver, filter);
 	    			
 	    			//artist = data.getStringExtra("artist");
-			    	Log.d(TAG, "DONE REGISTERING JUNTS"); 	
+			    	Log.d(TAG, "DONE REGISTERING JUNTS");
+			    	
+			    	mViewPager.getAdapter().notifyDataSetChanged();
 	    	}
 	    		
 			case 2:
@@ -323,6 +331,8 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 					UserHelper.userInfo[UserHelper.TOKEN] = userToken; 
 					
 					Toast.makeText(context, "Successfully logged in. . . Token: " + Integer.toString(userID) + " " + userToken, Toast.LENGTH_SHORT).show();
+					//UserPlaylist.newInstance(UserHelper.userInfo[UserHelper.USER], UserHelper.userInfo[UserHelper.TOKEN]);
+					mViewPager.getAdapter().notifyDataSetChanged();					
 				}
 				
 	    		
@@ -590,6 +600,11 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 				return UserPlaylist.newInstance(UserHelper.userInfo[UserHelper.USER], UserHelper.userInfo[UserHelper.TOKEN]);
 			}
 		}
+		
+		@Override	
+		public int getItemPosition(Object object) {
+			return POSITION_NONE;
+		}
 
 		@Override
 		public void onTabSelected(Tab tab, FragmentTransaction ft) {
@@ -667,9 +682,19 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 	    			Toast.makeText(this, "Please log in first.", Toast.LENGTH_SHORT).show();
 	    		}
 	    		return true;
+	    		
+	    	case R.id.menu_refresh:
+	    		if(UserHelper.userLoggedIn()) {
+					mViewPager.getAdapter().notifyDataSetChanged();
+	    			//UserPlaylist.newInstance(UserHelper.userInfo[UserHelper.USER], UserHelper.userInfo[UserHelper.TOKEN]);
+	    		} else {
+	    			Toast.makeText(this, "Please login first.", Toast.LENGTH_SHORT).show();
+	    		}
+	    		
+	    		return true;
+	    		
 	    	
 	    	default:
-	    		
 	    		showToast();
 	    		return super.onOptionsItemSelected(item);
     	}
@@ -753,7 +778,7 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 	    
 	    ForegroundHelper.activityStates[ForegroundHelper.MAINACT] = false;
 
-	    if(mBound && !ForegroundHelper.activityExistsInForeground()){
+	    if(mBound && !ForegroundHelper.activityExistsInForeground() && !artistClicked){
 		    musicService.showNotification();
 		    musicService.setNotificationStatus(true);
 	    }
@@ -805,14 +830,20 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 		  
 		  if(musicService != null) {
 			  musicService.updateButtons();
+			  musicService.clearNotifications();
 
 		  }
 		  
+		  artistClicked = false;
+		  
+		  controlLayout = (LinearLayout) findViewById(R.id.controlLayout);
+
 		  	if(mBound) {
-			  	controlLayout = (LinearLayout) findViewById(R.id.controlLayout);
 				
 				if(!isMyServiceRunning()) {
 					controlLayout.setVisibility(View.GONE);
+				} else {
+					controlLayout.setVisibility(View.VISIBLE);
 				}
 				
 				prevButton = (ImageButton) findViewById(R.id.homePrevButton);
@@ -849,6 +880,8 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
   		case R.id.artistNameText:
   			
   			if(mBound) {
+  				
+  				artistClicked = true;
   				Intent playlistIntent = new Intent(this, PlaylistActivity.class);
   				playlistIntent.putExtra("videos", musicService.getVideos());
   				playlistIntent.putExtra("new", false);

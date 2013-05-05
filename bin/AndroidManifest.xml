@@ -83,6 +83,8 @@
                 <action android:name="com.iheanyiekechukwu.tubalr.MusicService.RESUME_TRACK" />
                 <action android:name="com.iheanyiekechukwu.tubalr.MusicService.PLAY_SELECT" />
                 <action android:name="com.iheanyiekechukwu.tubalr.MusicService.PREV_TRACK" />
+                <action android:name="com.iheanyiekechukwu.tubalr.MusicService.STOP_TRACK" />
+                
             </intent-filter>
         </activity>
         <activity

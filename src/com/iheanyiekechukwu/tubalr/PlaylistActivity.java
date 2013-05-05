@@ -29,12 +29,17 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
+import android.app.AlertDialog.Builder;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -90,6 +95,9 @@ import com.actionbarsherlock.view.MenuItem;
 import com.bugsense.trace.BugSenseHandler;
 import com.bugsnag.android.Bugsnag;
 import com.flurry.android.FlurryAgent;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 
 public class PlaylistActivity extends SherlockActivity implements OnClickListener, MyResultReceiver.Receiver, OnItemClickListener, OnSeekBarChangeListener, OnCompletionListener, OnBufferingUpdateListener, OnPreparedListener, Callback, OnAudioFocusChangeListener {
 
@@ -111,6 +119,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	private ImageView videoImageView;
 	private ArrayList<VideoClass> videoList;
 	
+	private boolean homePressed = false;
 	private int selectedPosition = 0;
 	
     private static final String YOUTUBE_VIDEO_URL = "https://youtube.com/watch?v=";
@@ -176,6 +185,9 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	public static final String NEW_SONGS = INTENT_BASE_NAME + ".NEW_SONGS";
 	
 	boolean runUnregister = true;
+	
+	private ArrayList<String> userPlaylists;
+	private ArrayList<Integer> playlistIDs;
    
 	
 	@SuppressWarnings("deprecation")
@@ -197,6 +209,9 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		Drawable d = getResources().getDrawable(R.drawable.navbar);
         
         getSupportActionBar().setBackgroundDrawable(d);
+        
+        userPlaylists = new ArrayList<String>();
+        playlistIDs = new ArrayList<Integer>();
         
 		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 		getSupportActionBar().setDisplayShowTitleEnabled(true);
@@ -341,7 +356,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		    
 		    
 				
-			pd = ProgressDialog.show(this, "Building Playlist", "Finding Songs Relevant For Query: " + name);
+			pd = ProgressDialog.show(this, "Building Playlist", "This may take a moment . . .");
 			pd.setCancelable(true);
 		} else {
 			
@@ -469,9 +484,11 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 			//
 			
 			Log.d(TAG, "Home as up called?");
+			
+			homePressed = true;
 			Intent returnIntent = new Intent();
 			returnIntent.putExtra("videos", videoList);
-			setResult(RESULT_OK, returnIntent);
+			setResult(RESULT_FIRST_USER, returnIntent);
 			
 			if(mBound && serviceConnection != null) {
 				unbindService(serviceConnection);
@@ -485,13 +502,219 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
     		showSearchDialog("Please enter an artist's name");
     		return true;
     		
+    	case R.id.action_login:
+    		Intent loginIntent = new Intent(this, LoginActivity.class);
+    		
+    		startActivityForResult(loginIntent, 2);
+    		
+    		return true;
+    		
+    	case R.id.menu_add:
+    		
+    		if(!UserHelper.userLoggedIn()) {
+    			Toast.makeText(this, "Please login first.", Toast.LENGTH_SHORT);
+    		} else {
+    			showAddDialog();
+    		} 
+    			
+    		return true;
+    		
 		default:
 			showToast();
-    		
+			return super.onOptionsItemSelected(item);
+
 		}
 			
-		return super.onOptionsItemSelected(item);
 	}
+	
+    private void showAddDialog() {
+    	
+		// TODO Auto-generated method stub
+		if(userPlaylists.size() != 0) { 
+			Log.d(TAG, "FROM NON-ZERO JUNTS.");
+			String[] names = userPlaylists.toArray(new String[userPlaylists.size()]);
+			Log.d(TAG, "Length of Names:" + Integer.toString(names.length));
+
+			ArrayAdapter<String> simpleAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, userPlaylists);
+
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setTitle("Add Song to Playlist . . .")
+			
+			.setAdapter(simpleAdapter, new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					// TODO Auto-generated method stub
+					dialog.dismiss();
+					
+					String playlist = Integer.toString(playlistIDs.get(which));
+					String playlistTitle = userPlaylists.get(which);
+					
+					String currentVideoID = musicService.getCurrentVideo().getId();
+					String currentVideoTitle = musicService.getCurrentVideo().getTitle();
+					AsyncHttpClient client = new AsyncHttpClient();
+					RequestParams params = new RequestParams();
+					params.put("auth_token", UserHelper.userInfo[UserHelper.TOKEN]);
+					
+					StringBuilder stringBuilder = new StringBuilder();
+					stringBuilder.append("http://www.tubalr.com/api/playlist/add_video?playlist_id=");
+					stringBuilder.append(URLEncoder.encode(playlist));
+					stringBuilder.append("&video_id=");
+					stringBuilder.append(URLEncoder.encode(currentVideoID));
+					stringBuilder.append("&video_title=");
+					stringBuilder.append(URLEncoder.encode(currentVideoTitle));
+					
+					String addURL = stringBuilder.toString();
+					String url = URLEncoder.encode("http://www.tubalr.com/api/playlist/add_video?playlist_id=" + playlistIDs.get(which) + "video_id=" + musicService.getCurrentVideo().getId() + "&video_title=" + musicService.getCurrentVideo().getTitle());
+					client.post(addURL, params, new JsonHttpResponseHandler() {
+		            	public void onSuccess(JSONObject result) {
+		            		
+		            		String name = "";
+		            		boolean added = false;
+							try {
+								added = result.getBoolean("added_to_playlist");
+							} catch (JSONException e) {
+								// TODO Auto-generated catch block
+								Toast.makeText(getBaseContext(), "Error adding new song!", Toast.LENGTH_SHORT).show();
+								e.printStackTrace();
+							}
+							
+							if(added) {
+								Toast.makeText(getBaseContext(), "Successfully added song to playlist.", Toast.LENGTH_SHORT).show();
+							} else {
+								Toast.makeText(getBaseContext(), "Error adding song to the playlist.", Toast.LENGTH_SHORT).show();
+							}
+		            	}
+				});
+			}
+		});
+			builder.show();
+		} else {
+			Log.d(TAG, "FROM NOTHING.");
+			AsyncHttpClient client = new AsyncHttpClient();
+			RequestParams params = new RequestParams();
+			params.put("auth_token", UserHelper.userInfo[UserHelper.TOKEN]);
+			String url = "http://www.tubalr.com/api/user/info.json";
+			
+			client.get(url, params, new JsonHttpResponseHandler() {
+            	public void onSuccess(JSONObject result) {
+            		Log.d("USER", "Successfully succeeded in querying the page . . . ");
+					JSONArray playlistArray;
+					try {
+						playlistArray = result.getJSONArray("playlists");
+						for(int i = 0; i < playlistArray.length(); ++i) {
+							JSONObject j = playlistArray.getJSONObject(i);
+							Log.d("USER", "Adding: " + j.getString("playlist_name"));
+							userPlaylists.add(j.getString("playlist_name"));
+							playlistIDs.add(j.getInt("id"));
+						}
+					} catch (JSONException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					//JSONArray playlistArray = new JSONArray(result);
+
+				}				
+			});
+			
+			String[] names = userPlaylists.toArray(new String[userPlaylists.size()]);
+			
+			ArrayAdapter<String> simpleAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, userPlaylists);
+			simpleAdapter.notifyDataSetChanged();
+			Log.d(TAG, "Length of Names:" + Integer.toString(names.length));
+			
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setTitle("Add Song to Playlist . . .")
+			
+			.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            })
+			.setAdapter(simpleAdapter, new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					// TODO Auto-generated method stub
+					dialog.dismiss();
+					
+					String playlist = Integer.toString(playlistIDs.get(which));
+					String playlistTitle = userPlaylists.get(which);
+					
+					String currentVideoID = musicService.getCurrentVideo().getId();
+					String currentVideoTitle = musicService.getCurrentVideo().getTitle();
+					AsyncHttpClient client = new AsyncHttpClient();
+					RequestParams params = new RequestParams();
+					params.put("auth_token", UserHelper.userInfo[UserHelper.TOKEN]);
+					
+					StringBuilder stringBuilder = new StringBuilder();
+					stringBuilder.append("http://www.tubalr.com/api/playlist/add_video?playlist_id=");
+					stringBuilder.append(URLEncoder.encode(playlist));
+					stringBuilder.append("&video_id=");
+					stringBuilder.append(URLEncoder.encode(currentVideoID));
+					stringBuilder.append("&video_title=");
+					stringBuilder.append(URLEncoder.encode(currentVideoTitle));
+					
+					String addURL = stringBuilder.toString();
+					String url = URLEncoder.encode("http://www.tubalr.com/api/playlist/add_video?playlist_id=" + playlistIDs.get(which) + "video_id=" + musicService.getCurrentVideo().getId() + "&video_title=" + musicService.getCurrentVideo().getTitle());
+					client.post(addURL, params, new JsonHttpResponseHandler() {
+		            	public void onSuccess(JSONObject result) {
+		            		
+		            		String name = "";
+		            		boolean added = false;
+							try {
+								added = result.getBoolean("added_to_playlist");
+							} catch (JSONException e) {
+								// TODO Auto-generated catch block
+								Toast.makeText(getBaseContext(), "Error adding new song!", Toast.LENGTH_SHORT).show();
+								e.printStackTrace();
+							}
+							
+							if(added) {
+								Toast.makeText(getBaseContext(), "Successfully added song to playlist.", Toast.LENGTH_SHORT).show();
+							} else {
+								Toast.makeText(getBaseContext(), "Error adding song to the playlist.", Toast.LENGTH_SHORT).show();
+							}
+		            	}
+				});
+			}
+		});
+			
+			builder.show();
+		}
+		
+}
+		
+			
+			
+					
+		            	
+					
+
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) { 
+    	
+		Log.d(TAG, "On activity result!");
+		
+		switch(requestCode) {    		
+			case 2:
+				if(resultCode == RESULT_OK) {
+					Integer userID = data.getIntExtra("userid", -1);
+					String userToken = data.getStringExtra("token");
+					
+					UserHelper.userInfo[UserHelper.USER] = Integer.toString(userID);
+					UserHelper.userInfo[UserHelper.TOKEN] = userToken; 
+					
+					Toast.makeText(context, "Successfully logged in. . . Token: " + Integer.toString(userID) + " " + userToken, Toast.LENGTH_SHORT).show();
+					//UserPlaylist.newInstance(UserHelper.userInfo[UserHelper.USER], UserHelper.userInfo[UserHelper.TOKEN]);
+				}
+				
+	    		
+	    		break;
+		}
+
+}
 
 	@Override
 	public void onItemClick(AdapterView<?> arg0, View arg1, int pos, long arg3) {
@@ -1198,7 +1421,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	    
 		  ForegroundHelper.activityStates[ForegroundHelper.PLAYACT] = false;
 
-		  if(mBound && !ForegroundHelper.activityExistsInForeground()) {
+		  if(mBound && !ForegroundHelper.activityExistsInForeground() && !homePressed) {
 			  musicService.showNotification();
 			  musicService.setNotificationStatus(true);
 		  }
@@ -1237,7 +1460,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 		  super.onResume();
 		  
 		  
-		  
+		  homePressed = false;
 		  //musicServiceIntent = new Intent(this, MusicService.class);
 		  //bindService(musicServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 		  
@@ -1267,6 +1490,8 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 	      if(mBound) {
 	    	  MusicService.setMainActivity(PlaylistActivity.this);
 	    	  musicService.setNotificationStatus(false);
+	    	  musicService.clearNotifications();
+	    	  musicService.startPlayProgressUpdater();
 	    	  //musicService.checkVisibility(false);
 	      }
 	      

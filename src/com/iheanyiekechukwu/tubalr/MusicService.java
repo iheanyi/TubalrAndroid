@@ -28,7 +28,7 @@ import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
-import android.annotation.TargetApi;
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -48,6 +48,7 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -61,6 +62,8 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.koushikdutta.async.http.AsyncHttpClient;
+import com.koushikdutta.async.http.AsyncHttpResponse;
 import com.koushikdutta.urlimageviewhelper.UrlImageViewHelper;
 //import com.iheanyiekechukwu.tubalr.PlaylistActivity.YoutubeVideoTask;
 
@@ -76,6 +79,8 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 	public static final String PLAY_SELECT = INTENT_BASE_NAME + ".PLAY_SELECT";
 	public static final String NEW_SONGS = INTENT_BASE_NAME + ".NEW_SONGS";
 	public static final String RESUME_TRACK = INTENT_BASE_NAME + ".RESUME_TRACK";
+	public static final String STOP_TRACK = INTENT_BASE_NAME + ".STOP_TRACK";
+
 
     private static final String YOUTUBE_VIDEO_URL = "https://youtube.com/watch?v=";
 
@@ -124,6 +129,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		intentFilter.addAction(RESUME_TRACK);
 		intentFilter.addAction(PLAY_SELECT);
 		intentFilter.addAction(NEW_SONGS);
+		intentFilter.addAction(STOP_TRACK);
 		registerReceiver(broadcastReceiver, intentFilter);
 		
 		context = getApplicationContext();
@@ -364,12 +370,13 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 				@Override
 				public void onClick(View arg0) {
 					// TODO Auto-generated method stub
-					if(mMediaPlayer != null && !(mMediaPlayer.isPlaying())) {
+					if(mMediaPlayer != null) {
+						if(!mMediaPlayer.isPlaying()) {
 						mMediaPlayer.start();
 						paused = false;
 						pauseButton.setVisibility(View.VISIBLE);
 						playButton.setVisibility(View.GONE);
-						
+						}
 					}
 				}
 				
@@ -380,13 +387,17 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 				@Override
 				public void onClick(View arg0) {
 					// TODO Auto-generated method stub
-					if(mMediaPlayer.isPlaying() && mMediaPlayer != null) {
+					if(mMediaPlayer != null) {
+						
+					
+					if(mMediaPlayer.isPlaying()) {
 						//pause();
 						mMediaPlayer.pause();
 						paused = true;
 						pauseButton.setVisibility(View.GONE);
 						playButton.setVisibility(View.VISIBLE);
 					}
+				}
 				}
 				
 			});		
@@ -662,21 +673,18 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 			
 			//String id = this.tempID;
 			if(matcher.find()) {
-				try {
 					String[] start = content.split(startPattern.toString());
 					String[] end = start[1].split(endPattern.toString());
 					
 					// Other decoding stuff
-					String contentDecoded = URLDecoder.decode(end[0], "UTF-8");
+					String contentDecoded = URLDecoder.decode(end[0]);
 					contentDecoded = contentDecoded.replaceAll(", ", "-");
 					contentDecoded = contentDecoded.replaceAll("sig=", "signature=");
 					contentDecoded = contentDecoded.replaceAll("x-flv", "flv");
 					contentDecoded = contentDecoded.replaceAll("\\\\u0026", "&");
 					Log.d("DEBUG", "contentDecoded: " + contentDecoded);
 					findCodecs(contentDecoded, title, id);
-				} catch (UnsupportedEncodingException e) {
-					e.printStackTrace();
-				}
+				
 			}
 	    }
 
@@ -740,9 +748,11 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		
 		Log.v(TAG, "MusicService: playFirstSong() called.");
 		
+		
+	
         String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(current).getId();
-        YoutubeVideoTask myTask = new YoutubeVideoTask();
-        myTask.execute(yt_video_url);
+        //YoutubeVideoTask myTask = new YoutubeVideoTask();
+        //myTask.execute(yt_video_url);
 		
 		
 	}
@@ -752,6 +762,30 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		stop();
 		
         String yt_video_url = YOUTUBE_VIDEO_URL + videoList.get(current).getId();
+        
+		/*AsyncHttpClient.getDefaultInstance().get(yt_video_url, new AsyncHttpClient.StringCallback() {
+		    // Callback is invoked with any exceptions/errors, and the result, if available.
+		    public void onCompleted(Exception e, String result) {
+
+		        System.out.println("I got a string: " + result);
+		    }
+
+			@Override
+			public void onCompleted(Exception e, AsyncHttpResponse source,
+					String result) {
+				// TODO Auto-generated method stub
+		        if (e != null) {
+		            e.printStackTrace();
+		            return;
+		        }
+		        
+		        System.out.println(result);
+		        
+		        parseHTML(result);
+		        
+			}
+		});*/
+		
         YoutubeVideoTask myTask = new YoutubeVideoTask();
         myTask.execute(yt_video_url);	
         
@@ -832,18 +866,22 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		
 		//Notification notification = new Notification(R.drawable.tubalr_icon, "Tubalr", video.getTitle());
 		
-		if(mMediaPlayer != null && paused) {
-			mMediaPlayer.start();
-			paused = false;
-			if(notifStatus && !ForegroundHelper.activityExistsInForeground()) {
-				showNotification();
-			}
-			return;
+		if(mMediaPlayer != null) {
 			
-		} else if(mMediaPlayer != null) {
-			release();
+			if(!isPlaying()) {
+				mMediaPlayer.start();
+				paused = false;
+				if(notifStatus && !ForegroundHelper.activityExistsInForeground()) {
+					showNotification();
+				}
+				return;
+				
+			} else if(mMediaPlayer != null) {
+				release();
+			}
+			
 		}
-		
+
 		try {
 			mMediaPlayer = new MediaPlayer();
 			mMediaPlayer.setOnPreparedListener(this);
@@ -887,6 +925,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 	private void nextTrack() {
 		
 		Log.v(TAG, "Currently in nextTrack()");
+		//Toast.makeText(context, text, duration)
 		current++;
 		
 		if(current >= videoList.size()) {
@@ -1020,7 +1059,10 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 			} else if(RESUME_TRACK.equals(action)) {
 				Log.v(TAG, "play() called.");
 				play();
-			} else if(NEXT_TRACK.equals(action)) {
+			} else if(STOP_TRACK.equals(action)) {
+				Log.v(TAG, "stop() called");
+				release();
+			}	else if(NEXT_TRACK.equals(action)) {
 				Log.v(TAG, "nextTrack() called.");
 				nextTrack();
 			} else if(PREV_TRACK.equals(action)) {
@@ -1124,7 +1166,17 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 			String[] CQS = contentDecoded.split(trimPattern.toString());
 			
 			// Just go with first quality for now
- 			linksComposer(CQS[0], 1, title, id);
+			
+			
+			boolean found = false;
+			System.out.println("CODINGS");
+			for(String s : CQS) {
+				if(s.contains("video/mp4")) {
+					System.out.println(s + "" + title);
+		 			linksComposer(s, 1, title, id);
+		 			break;
+				}
+			}
 		}
 		
 	}
@@ -1176,7 +1228,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
     			String sig = sigMatcher.group();
     			Log.d("DEBUG", "sig: " + sig);
 				String linkToAdd = url + "&" + sig;
-				linkToAdd.replaceAll("&itag=[0-9][0-9]&signature", "&signature");
+				//linkToAdd.replaceAll("&itag=[0-9][0-9]&signature", "&signature");
 				String testString = new String(linkToAdd.getBytes());
 				Log.d("DEBUG", "link:" + testString);
 				
@@ -1210,6 +1262,8 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
     	
 		protected void onPostExecute(String result) {
 			
+			
+
 			String[] results = result.trim().split("var swf = ");
 			
 			results = results[results.length - 1].trim().split("document.getElementById\\(");
@@ -1218,9 +1272,71 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 			decodeURL(result);
 		}
     }
+    
+    public void parseHTML(String result) {
+		String title = findVideoFilename(result);
+		String id = findVideoID(result);
+		String[] results = result.trim().split("var swf = ");
+		
+		results = results[results.length - 1].trim().split("document.getElementById\\(");
+		String html = results[0];
+		
+		getURLs(html, title, id);
+    }
 
-    public void getURLs(String result) {
-    	try {
+    public void getURLs(String result, String title, String id) {
+    	
+    	System.out.println(result);
+    	String url = URLDecoder.decode(result);
+    	url = URLDecoder.decode(url);
+    	url = URLDecoder.decode(url);
+    	url = url.replace("\\u0026", "&");
+    	
+    	String[] links = url.split("url_encoded_fmt_stream_map\":");
+    	
+    	String link = links[links.length-1];
+    	String[] qualities = link.split("url=");
+    	ArrayList<String> qualitiesArray = new ArrayList<String>(Arrays.asList(qualities));
+    	qualitiesArray.remove(0);
+    	
+    	ArrayList<String> cleanURLs = new ArrayList<String>();
+    	for(String s : qualitiesArray) {
+    		
+    		String eachLink = s.split(";+codecs=")[0];
+    		
+    		String contentDecoded = "";
+			Pattern sigPattern = Pattern.compile("signature=[[0-9][A-Z]]{40}\\.[[0-9][A-Z]]{40}");
+			
+			if(eachLink.contains("video/mp4")) {
+				Matcher sigMatcher = sigPattern.matcher(eachLink);
+				if(sigMatcher.find()) {
+					String[] results = eachLink.split("&itag=");
+					
+					String lastTag = results[results.length-1];
+					String finalURL = eachLink.split("&itag=" + lastTag)[0];
+					
+					if(finalURL.contains("sig")) {
+						Log.d(TAG, "Signature already present in: " + finalURL);
+						contentDecoded = url;
+					}
+					
+					contentDecoded = contentDecoded.replace("sig=", "signature");
+					cleanURLs.add(contentDecoded);
+				}
+			}
+    	}
+    	
+    	for(String cleanLink : cleanURLs) {
+    		if(cleanLink.contains("fallback_host") && cleanLink.contains("itag=18")) {
+				videoList.get(current).setUrl(cleanLink);
+				play();
+				return;
+    		}
+    	}
+    	
+    	Toast.makeText(getBaseContext(), "No valid stream URL found, skipping to next track.", Toast.LENGTH_SHORT).show();
+    	nextTrack();
+    	/*try {
 			String url = URLDecoder.decode(result, "UTF-8");
 			url = URLDecoder.decode(url, "UTF-8");
 			url = URLDecoder.decode(url, "UTF-8");
@@ -1256,7 +1372,7 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		}*/
     	
     }
     
@@ -1448,10 +1564,13 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 	}
 
 
+	@SuppressLint("NewApi")
 	public void showNotification() {
 		// TODO Auto-generated method stub
 		
 		
+		
+
 		Intent intent = null;
 		if(homeActivity != null) {
 			intent = new Intent(getApplicationContext(), MainActivity.class);
@@ -1466,33 +1585,63 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 
 		intent.setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
 
-		
-		PendingIntent pIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-		PendingIntent prevIntent = PendingIntent.getBroadcast(this, 0, new Intent(PREV_TRACK), 0);
-		PendingIntent nextIntent = PendingIntent.getBroadcast(this, 0, new Intent(NEXT_TRACK), 0);
-		PendingIntent pauseIntent = PendingIntent.getBroadcast(this, 0, new Intent(RESUME_TRACK), 0);
-		PendingIntent playIntent = PendingIntent.getBroadcast(this, 0, new Intent(PAUSE_TRACK), 0);
-		Notification.Builder mBuilder = new Notification.Builder(this)
-			.setSmallIcon(R.drawable.tubalr_icon)
-			.setContentTitle("Tubalr")
-			.setContentText(getCurrentVideo().getTitle())
-			.setContentIntent(pIntent);
+		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+			PendingIntent pIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			PendingIntent prevIntent = PendingIntent.getBroadcast(this, 0, new Intent(PREV_TRACK), 0);
+			PendingIntent nextIntent = PendingIntent.getBroadcast(this, 0, new Intent(NEXT_TRACK), 0);
+			PendingIntent pauseIntent = PendingIntent.getBroadcast(this, 0, new Intent(RESUME_TRACK), 0);
+			PendingIntent playIntent = PendingIntent.getBroadcast(this, 0, new Intent(PAUSE_TRACK), 0);
+			PendingIntent stopIntent = PendingIntent.getBroadcast(this, 0, new Intent(STOP_TRACK), 0);
+			Notification.Builder mBuilder = new Notification.Builder(this)
+				.setSmallIcon(R.drawable.tubalr_icon)
+				.setContentTitle("Tubalr")
+				.setContentText(getCurrentVideo().getTitle())
+				.setContentIntent(pIntent)
+				.setAutoCancel(false)
+				.setDeleteIntent(stopIntent);
+				
+				if(Build.VERSION.SDK_INT >= 16) {
+					mBuilder.addAction(R.drawable.player_prev, null, prevIntent)
+					.addAction(isPlaying() ? R.drawable.player_pause: R.drawable.player_play, isPlaying() ? null : null, isPlaying() ? playIntent : pauseIntent)
+					.addAction(R.drawable.player_next, null, nextIntent);
+				}
+	;
 			
-			if(Build.VERSION.SDK_INT >  16) {
-				mBuilder.addAction(R.drawable.player_prev, null, prevIntent)
-				.addAction(isPlaying() ? R.drawable.player_pause: R.drawable.player_play, isPlaying() ? null : null, isPlaying() ? playIntent : pauseIntent)
-				.addAction(R.drawable.player_next, null, nextIntent);
-			}
-;
-		
-		Notification notif = mBuilder.build();
-		
-		NotificationManager notificationManager = 
-				  (NotificationManager) getSystemService (NOTIFICATION_SERVICE);
+			Notification notif = mBuilder.build();
 			
+			NotificationManager notificationManager = 
+					  (NotificationManager) getSystemService (NOTIFICATION_SERVICE);
+				
 
-		notif.flags |= Notification.FLAG_NO_CLEAR | Notification.FLAG_ONGOING_EVENT | Notification.FLAG_AUTO_CANCEL;
-		notificationManager.notify(0, notif);
+			//notif.flags |= Notification.FLAG_NO_CLEAR | Notification.FLAG_ONGOING_EVENT | Notification.FLAG_AUTO_CANCEL;
+			notif.flags |= Notification.FLAG_NO_CLEAR;
+
+			notificationManager.notify(0, notif);
+		} else {
+			PendingIntent pIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			PendingIntent stopIntent = PendingIntent.getBroadcast(this, 0, new Intent(STOP_TRACK), 0);
+			NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
+				.setSmallIcon(R.drawable.tubalr_icon)
+				.setContentTitle("Tubalr")
+				.setContentText(getCurrentVideo().getTitle())
+				.setContentIntent(pIntent)
+				.setAutoCancel(false)
+				.setDeleteIntent(stopIntent);
+			
+			
+			Notification notif = mBuilder.build();
+			
+			NotificationManager notificationManager = 
+					  (NotificationManager) getSystemService (NOTIFICATION_SERVICE);
+				
+
+			//notif.flags |= Notification.FLAG_NO_CLEAR | Notification.FLAG_ONGOING_EVENT | Notification.FLAG_AUTO_CANCEL;
+			notif.flags |= Notification.FLAG_NO_CLEAR;
+
+			notificationManager.notify(0, notif);
+		}
+
+		
 		
 		//mNotificationManager.notify(0, mBuilder.build();
 
@@ -1504,6 +1653,14 @@ public class MusicService extends Service implements OnPreparedListener, OnClick
 	public void checkVisibility(boolean b) {
 		// TODO Auto-generated method stub
 		isVisible = b;	
+	}
+	
+	public void clearNotifications() {
+		NotificationManager notificationManager = 
+				  (NotificationManager) getSystemService (NOTIFICATION_SERVICE);
+			
+		notificationManager.cancelAll();
+		notificationManager.cancel(0);
 	}
     
 	

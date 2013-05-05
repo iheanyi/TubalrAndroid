@@ -2,28 +2,30 @@ package com.iheanyiekechukwu.tubalr;
 
 import java.util.ArrayList;
 
-import org.apache.http.auth.AuthScope;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.Toast;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.actionbarsherlock.app.SherlockFragment;
-//import com.koushikdutta.async.http.AsyncHttpClient;
-import com.koushikdutta.async.http.AsyncHttpResponse;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
+//import com.koushikdutta.async.http.AsyncHttpClient;
 
 /**
  * A simple {@link android.support.v4.app.Fragment} subclass. Activities that
@@ -33,7 +35,7 @@ import com.loopj.android.http.RequestParams;
  * method to create an instance of this fragment.
  * 
  */
-public class UserPlaylist extends SherlockFragment {
+public class UserPlaylist extends SherlockFragment implements OnItemClickListener {
 	// TODO: Rename parameter arguments, choose names that match
 	// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 	private static final String USER = UserHelper.userInfo[UserHelper.USER];
@@ -89,7 +91,9 @@ public class UserPlaylist extends SherlockFragment {
 		// Inflate the layout for this fragment
 		View v = inflater.inflate(R.layout.fragment_playlist, container, false);
 		
-		ListView playlistView = (ListView) v.findViewById(R.id.usersPlaylists);
+		final ListView playlistView = (ListView) v.findViewById(R.id.usersPlaylists);
+		final ProgressBar userProgress = (ProgressBar) v.findViewById(R.id.playlistProgress);
+		TextView loginText = (TextView) v.findViewById(R.id.loginText);
 		
 		userPlaylists = new ArrayList<String>();
 		playlistIDs = new ArrayList<Integer>();
@@ -99,11 +103,14 @@ public class UserPlaylist extends SherlockFragment {
 		String url = "http://www.tubalr.com/api/user/info.json";
 		
 
-		Log.d("INFO", user);
-		Log.d("INFO", token);
+	//	Log.d("INFO", user);
+//		Log.d("INFO", token);
 		
 		if(UserHelper.userLoggedIn()) {
-			Toast.makeText(getActivity(), "Fetching playlists for " + user + " with token " + token, Toast.LENGTH_SHORT).show();
+			loginText.setVisibility(View.GONE);
+			playlistView.setVisibility(View.GONE);
+			userProgress.setVisibility(View.VISIBLE);
+			//Toast.makeText(getActivity(), "Fetching playlists for " + user + " with token " + token, Toast.LENGTH_SHORT).show();
 			AsyncHttpClient client = new AsyncHttpClient();
 			RequestParams params = new RequestParams();
 			params.put("auth_token", token);
@@ -119,6 +126,9 @@ public class UserPlaylist extends SherlockFragment {
 							userPlaylists.add(j.getString("playlist_name"));
 							playlistIDs.add(j.getInt("id"));
 						}
+						
+						playlistView.setVisibility(View.VISIBLE);
+						userProgress.setVisibility(View.GONE);
 					} catch (JSONException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -128,35 +138,17 @@ public class UserPlaylist extends SherlockFragment {
 				}
 			});
 			
-			/*com.koushikdutta.async.http.AsyncHttpClient.getDefaultInstance().get(url, new com.koushikdutta.async.http.AsyncHttpClient.StringCallback() {
-
-				@Override
-				public void onCompleted(Exception e, AsyncHttpResponse source,
-						String result) {
-					
-					try {
-						//JSONObject jsonResult = new JSONObject(result);
-						//JSONArray playlistArray = jsonResult.getJSONArray("playlists");
-						JSONArray playlistArray = new JSONArray(result);
-						for(int i = 0; i < playlistArray.length(); ++i) {
-							JSONObject j = playlistArray.getJSONObject(i);
-							userPlaylists.add(j.getString("playlist_name"));
-							playlistIDs.add(j.getInt("id"));
-						}
-					} catch (JSONException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}
-					// TODO Auto-generated method stub
-					
-				}
-				
-			});*/
+		} else {
+			loginText.setVisibility(View.VISIBLE);
+			playlistView.setVisibility(View.GONE);
+			userProgress.setVisibility(View.GONE);
 		}
 		
 		myAdapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1, userPlaylists);
 		playlistView.setAdapter(myAdapter);
 		myAdapter.notifyDataSetChanged();
+		
+		playlistView.setOnItemClickListener(this);
 		
 		return v;
 	}
@@ -205,6 +197,25 @@ public class UserPlaylist extends SherlockFragment {
 	public interface OnFragmentInteractionListener {
 		// TODO: Update argument type and name
 		public void onFragmentInteraction(Uri uri);
+	}
+
+	@Override
+	public void onItemClick(AdapterView<?> adapter, View v, int pos, long id) {
+		// TODO Auto-generated method stub
+		
+		Integer selected = playlistIDs.get(pos);
+		
+		String s_url = "";
+		String s_type ="user";
+		String s_artist = Integer.toString(selected);
+		
+		Intent i = new Intent(getActivity(), PlaylistActivity.class);
+		i.putExtra("url", s_url);
+        i.putExtra("type", s_type);
+        i.putExtra("artist", s_artist);
+        i.putExtra("new", true);
+        startActivityForResult(i, 1);
+		
 	}
 
 }

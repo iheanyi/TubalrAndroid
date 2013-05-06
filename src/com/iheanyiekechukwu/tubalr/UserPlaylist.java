@@ -25,17 +25,19 @@ import com.actionbarsherlock.app.SherlockFragment;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
+
 //import com.koushikdutta.async.http.AsyncHttpClient;
 
 /**
  * A simple {@link android.support.v4.app.Fragment} subclass. Activities that
  * contain this fragment must implement the
  * {@link UserPlaylist.OnFragmentInteractionListener} interface to handle
- * interaction events. Use the {@link UserPlaylist#newInstance} factory
- * method to create an instance of this fragment.
+ * interaction events. Use the {@link UserPlaylist#newInstance} factory method
+ * to create an instance of this fragment.
  * 
  */
-public class UserPlaylist extends SherlockFragment implements OnItemClickListener {
+public class UserPlaylist extends SherlockFragment implements
+		OnItemClickListener {
 	// TODO: Rename parameter arguments, choose names that match
 	// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 	private static final String USER = UserHelper.userInfo[UserHelper.USER];
@@ -43,15 +45,13 @@ public class UserPlaylist extends SherlockFragment implements OnItemClickListene
 
 	public static final String EXTRA_MESSAGE = "EXTRA_MESSAGE";
 
-    public static final String BUG_KEY = "b27d57ef";
-    public static final String FLURRY_KEY = "4GF6RX8PZ7DP53V795RF";
+	public static final String BUG_KEY = "b27d57ef";
+	public static final String FLURRY_KEY = "4GF6RX8PZ7DP53V795RF";
 
 	private ArrayAdapter<String> myAdapter;
 
 	private ArrayList<String> userPlaylists;
 	private ArrayList<Integer> playlistIDs;
-	
-	
 
 	private OnFragmentInteractionListener mListener;
 
@@ -82,7 +82,7 @@ public class UserPlaylist extends SherlockFragment implements OnItemClickListene
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
 	}
 
 	@Override
@@ -90,66 +90,72 @@ public class UserPlaylist extends SherlockFragment implements OnItemClickListene
 			Bundle savedInstanceState) {
 		// Inflate the layout for this fragment
 		View v = inflater.inflate(R.layout.fragment_playlist, container, false);
-		
-		final ListView playlistView = (ListView) v.findViewById(R.id.usersPlaylists);
-		final ProgressBar userProgress = (ProgressBar) v.findViewById(R.id.playlistProgress);
+
+		final ListView playlistView = (ListView) v
+				.findViewById(R.id.usersPlaylists);
+		final ProgressBar userProgress = (ProgressBar) v
+				.findViewById(R.id.playlistProgress);
 		TextView loginText = (TextView) v.findViewById(R.id.loginText);
-		
+
 		userPlaylists = new ArrayList<String>();
 		playlistIDs = new ArrayList<Integer>();
-		
+
 		String user = UserHelper.userInfo[UserHelper.USER];
 		String token = UserHelper.userInfo[UserHelper.TOKEN];
 		String url = "http://www.tubalr.com/api/user/info.json";
-		
 
-	//	Log.d("INFO", user);
-//		Log.d("INFO", token);
-		
-		if(UserHelper.userLoggedIn()) {
+		// Log.d("INFO", user);
+		// Log.d("INFO", token);
+
+		if (UserHelper.userLoggedIn()) {
 			loginText.setVisibility(View.GONE);
 			playlistView.setVisibility(View.GONE);
 			userProgress.setVisibility(View.VISIBLE);
-			//Toast.makeText(getActivity(), "Fetching playlists for " + user + " with token " + token, Toast.LENGTH_SHORT).show();
+			// Toast.makeText(getActivity(), "Fetching playlists for " + user +
+			// " with token " + token, Toast.LENGTH_SHORT).show();
 			AsyncHttpClient client = new AsyncHttpClient();
 			RequestParams params = new RequestParams();
 			params.put("auth_token", token);
 			client.get(url, params, new JsonHttpResponseHandler() {
-            	public void onSuccess(JSONObject result) {
-            		Log.d("USER", "Successfully succeeded in querying the page . . . ");
+				@Override
+				public void onSuccess(JSONObject result) {
+					Log.d("USER",
+							"Successfully succeeded in querying the page . . . ");
 					JSONArray playlistArray;
 					try {
 						playlistArray = result.getJSONArray("playlists");
-						for(int i = 0; i < playlistArray.length(); ++i) {
+						for (int i = 0; i < playlistArray.length(); ++i) {
 							JSONObject j = playlistArray.getJSONObject(i);
-							Log.d("USER", "Adding: " + j.getString("playlist_name"));
+							Log.d("USER",
+									"Adding: " + j.getString("playlist_name"));
 							userPlaylists.add(j.getString("playlist_name"));
 							playlistIDs.add(j.getInt("id"));
 						}
-						
+
 						playlistView.setVisibility(View.VISIBLE);
 						userProgress.setVisibility(View.GONE);
 					} catch (JSONException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					//JSONArray playlistArray = new JSONArray(result);
+					// JSONArray playlistArray = new JSONArray(result);
 
 				}
 			});
-			
+
 		} else {
 			loginText.setVisibility(View.VISIBLE);
 			playlistView.setVisibility(View.GONE);
 			userProgress.setVisibility(View.GONE);
 		}
-		
-		myAdapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1, userPlaylists);
+
+		myAdapter = new ArrayAdapter<String>(getActivity(),
+				android.R.layout.simple_list_item_1, userPlaylists);
 		playlistView.setAdapter(myAdapter);
 		myAdapter.notifyDataSetChanged();
-		
+
 		playlistView.setOnItemClickListener(this);
-		
+
 		return v;
 	}
 
@@ -159,15 +165,16 @@ public class UserPlaylist extends SherlockFragment implements OnItemClickListene
 			mListener.onFragmentInteraction(uri);
 		}
 	}
-	
+
 	public String getUser() {
-		
+
 		return getArguments().getString(USER);
 	}
 
 	public String getToken() {
 		return getArguments().getString(TOKEN);
 	}
+
 	@Override
 	public void onAttach(Activity activity) {
 		super.onAttach(activity);
@@ -202,20 +209,20 @@ public class UserPlaylist extends SherlockFragment implements OnItemClickListene
 	@Override
 	public void onItemClick(AdapterView<?> adapter, View v, int pos, long id) {
 		// TODO Auto-generated method stub
-		
+
 		Integer selected = playlistIDs.get(pos);
-		
+
 		String s_url = "";
-		String s_type ="user";
+		String s_type = "user";
 		String s_artist = Integer.toString(selected);
-		
+
 		Intent i = new Intent(getActivity(), PlaylistActivity.class);
 		i.putExtra("url", s_url);
-        i.putExtra("type", s_type);
-        i.putExtra("artist", s_artist);
-        i.putExtra("new", true);
-        getActivity().startActivityForResult(i, 1);
-		
+		i.putExtra("type", s_type);
+		i.putExtra("artist", s_artist);
+		i.putExtra("new", true);
+		getActivity().startActivityForResult(i, 1);
+
 	}
 
 }

@@ -13,7 +13,8 @@ class MyPageAdapter extends FragmentPagerAdapter {
 		super(fm);
 		this.fragments = fragments;
 	}
-	@Override 
+
+	@Override
 	public Fragment getItem(int position) {
 		return this.fragments.get(position);
 	}
@@ -23,4 +24,3 @@ class MyPageAdapter extends FragmentPagerAdapter {
 		return this.fragments.size();
 	}
 }
-

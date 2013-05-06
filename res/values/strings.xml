@@ -20,5 +20,8 @@
     <string name="title_section2">Section 2</string>
     <string name="title_section3">Section 3</string>
     <string name="title_activity_player">PlayerActivity</string>
+    <string name="tubalr">tubalr</string>
+    <string name="logout">Logout</string>
+    <string name="login">Login</string>
 
 </resources>

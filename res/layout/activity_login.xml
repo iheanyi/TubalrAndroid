@@ -61,15 +61,32 @@
                 android:maxLines="1"
                 android:singleLine="true" />
 
-            <Button
-                android:id="@+id/sign_in_button"
+            <CheckedTextView
+                android:id="@+id/registerCheckBox"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="right"
                 android:layout_marginTop="16dp"
-                android:paddingLeft="32dp"
-                android:paddingRight="32dp"
-                android:text="@string/action_sign_in_register" />
+                android:layout_weight="1"
+                android:maxLines="1"
+                android:paddingLeft="16dp"
+                android:text="Create an account?" 
+                android:visibility="gone"/>
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content" >
+
+                <Button
+                    android:id="@+id/sign_in_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:paddingLeft="32dp"
+                    android:paddingRight="32dp"
+                    android:layout_weight = "1"
+                    android:text="@string/action_sign_in_register" />
+
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
 

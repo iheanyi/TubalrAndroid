@@ -228,6 +228,10 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 			return;
 		}
 		
+		
+		if(UserHelper.userLoggedIn()) {
+			fetchPlaylists();
+		}
 		intent = this.getIntent();
 		
 		String url = intent.getExtras().getString("url");
@@ -494,7 +498,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 				unbindService(serviceConnection);
 			}
 			
-			PlaylistActivity.this.finish();
+			finish();
 			//NavUtils.navigateUpFromSameTask(this);
 			return true;
 			
@@ -512,7 +516,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
     	case R.id.menu_add:
     		
     		if(!UserHelper.userLoggedIn()) {
-    			Toast.makeText(this, "Please login first.", Toast.LENGTH_SHORT);
+    			Toast.makeText(this, "Please login first.", Toast.LENGTH_SHORT).show();
     		} else {
     			showAddDialog();
     		} 
@@ -707,6 +711,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 					UserHelper.userInfo[UserHelper.TOKEN] = userToken; 
 					
 					Toast.makeText(context, "Successfully logged in. . . Token: " + Integer.toString(userID) + " " + userToken, Toast.LENGTH_SHORT).show();
+					fetchPlaylists();
 					//UserPlaylist.newInstance(UserHelper.userInfo[UserHelper.USER], UserHelper.userInfo[UserHelper.TOKEN]);
 				}
 				
@@ -831,6 +836,34 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
     
     }
     
+    public void fetchPlaylists() {
+		AsyncHttpClient client = new AsyncHttpClient();
+		RequestParams params = new RequestParams();
+		params.put("auth_token", UserHelper.userInfo[UserHelper.TOKEN]);
+		String url = "http://www.tubalr.com/api/user/info.json";
+		
+		client.get(url, params, new JsonHttpResponseHandler() {
+        	public void onSuccess(JSONObject result) {
+        		Log.d("USER", "Successfully succeeded in querying the page . . . ");
+				JSONArray playlistArray;
+				try {
+					playlistArray = result.getJSONArray("playlists");
+					for(int i = 0; i < playlistArray.length(); ++i) {
+						JSONObject j = playlistArray.getJSONObject(i);
+						Log.d("USER", "Adding: " + j.getString("playlist_name"));
+						userPlaylists.add(j.getString("playlist_name"));
+						playlistIDs.add(j.getInt("id"));
+					}
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				//JSONArray playlistArray = new JSONArray(result);
+
+			}				
+		});
+    }
+    
 	private String findVideoFilename(String content) {
 		// TODO Auto-generated method stub		
         Pattern videoPattern = Pattern.compile("<title>(.*?)</title>");
@@ -880,6 +913,7 @@ public class PlaylistActivity extends SherlockActivity implements OnClickListene
 			String[] CQS = contentDecoded.split(trimPattern.toString());
 			
 			// Just go with first quality for now
+			
  			linksComposer(CQS[0], 1, title, id);
 		}
 		

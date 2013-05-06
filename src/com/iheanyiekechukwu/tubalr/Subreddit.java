@@ -295,7 +295,7 @@ public class Subreddit extends Fragment implements OnClickListener, OnChildClick
         i.putExtra("type", s_type);
         i.putExtra("artist", s_artist);
         i.putExtra("new", true);
-        startActivityForResult(i, 1);
+        getActivity().startActivityForResult(i, 1);
 		return true;
 	}
 }

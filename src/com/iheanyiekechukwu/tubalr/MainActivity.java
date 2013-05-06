@@ -114,7 +114,7 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
     private static final String YOUTUBE_END_URL = "&orderby=relevance&start-index=1&max-results=10&v=2&format=5&alt=json";
     private static final String YOUTUBE_VIDEO_URL = "https://youtube.com/watch?v=";
     
-    private static final String TAG = "HomeActivity";
+    private static final String TAG = "MainActivity";
     private Context context;
     
     private String artistName;
@@ -284,6 +284,9 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
     	
 		Log.d(TAG, "On activity result!");
 		
+		Log.d(TAG, Integer.toString(resultCode));
+		Log.d(TAG, Integer.toString(requestCode));
+		
 		switch(requestCode) {
 			case 1:
 	    		if(resultCode == RESULT_FIRST_USER) {
@@ -292,9 +295,7 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 	    			videos = (ArrayList<VideoClass>) data.getSerializableExtra("videos");
 		    		
 	    			//serviceConnection = new MusicServiceConnection();
-	    			if(isMyServiceRunning()) {
-	    				controlLayout.setVisibility(View.VISIBLE);
-	    			}
+
 	    			
 	    			MusicService.setMainActivity(MainActivity.this);
 
@@ -320,6 +321,10 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 			    	Log.d(TAG, "DONE REGISTERING JUNTS");
 			    	
 			    	mViewPager.getAdapter().notifyDataSetChanged();
+			    	
+	    			if(isMyServiceRunning()) {
+	    				controlLayout.setVisibility(View.VISIBLE);
+	    			}
 	    	}
 	    		
 			case 2:
@@ -374,7 +379,7 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 			// TODO Auto-generated method stub
 			Log.d(TAG, "MusicServiceConnection: Service connected");
 			musicService = ((MusicService.MusicServiceBinder) baBinder).getService();
-			musicServiceIntent = new Intent(getApplicationContext(), MusicService.class);
+			musicServiceIntent = new Intent(getBaseContext(), MusicService.class);
     		//musicServiceIntent.putExtra("videos", videos);
     		//musicServiceIntent.putExtra("artists", s_artist);
 			MusicService.setMainActivity(MainActivity.this);
@@ -466,7 +471,7 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 					
 					dialog.dismiss();
 					
-			        Intent i = new Intent(getApplicationContext(), PlaylistActivity.class);
+			        Intent i = new Intent(getBaseContext(), PlaylistActivity.class);
 			        i.putExtra("url", s_url);
 			        i.putExtra("type", s_type);
 			        i.putExtra("artist", s_artist);
@@ -511,7 +516,7 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 					
 					dialog.dismiss();
 					
-			        Intent i = new Intent(getApplicationContext(), PlaylistActivity.class);
+			        Intent i = new Intent(getBaseContext(), PlaylistActivity.class);
 			        i.putExtra("url", s_url);
 			        i.putExtra("type", s_type);
 			        i.putExtra("artist", s_artist);
@@ -528,7 +533,7 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 				}
 				
 				else {
-					Toast.makeText(getApplicationContext(), "Invalid input into the search box!", Toast.LENGTH_SHORT).show();
+					Toast.makeText(getBaseContext(), "Invalid input into the search box!", Toast.LENGTH_SHORT).show();
 					dialog.dismiss();
 				}	
 			}
@@ -840,11 +845,9 @@ public class MainActivity extends SherlockFragmentActivity implements OnClickLis
 
 		  	if(mBound) {
 				
-				if(!isMyServiceRunning()) {
-					controlLayout.setVisibility(View.GONE);
-				} else {
-					controlLayout.setVisibility(View.VISIBLE);
-				}
+
+				controlLayout.setVisibility(View.VISIBLE);
+				
 				
 				prevButton = (ImageButton) findViewById(R.id.homePrevButton);
 				nextButton = (ImageButton) findViewById(R.id.homeNextButton);

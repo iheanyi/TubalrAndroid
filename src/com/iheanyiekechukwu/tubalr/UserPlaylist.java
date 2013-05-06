@@ -214,7 +214,7 @@ public class UserPlaylist extends SherlockFragment implements OnItemClickListene
         i.putExtra("type", s_type);
         i.putExtra("artist", s_artist);
         i.putExtra("new", true);
-        startActivityForResult(i, 1);
+        getActivity().startActivityForResult(i, 1);
 		
 	}
 

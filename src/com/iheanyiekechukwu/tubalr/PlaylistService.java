@@ -228,7 +228,7 @@ public class PlaylistService extends IntentService {
 
 				}
 
-				if (videos.size() == 10) {
+				if (videos.size() == 40) {
 					break;
 				}
 			}
@@ -273,7 +273,7 @@ public class PlaylistService extends IntentService {
 
 				processYoutubeJSON(title, type);
 
-				if (videos.size() == 10) {
+				if (videos.size() == 40) {
 					Log.d(TAG,
 							"Shortening playlist size for purposes of demo...");
 					break;
@@ -307,7 +307,7 @@ public class PlaylistService extends IntentService {
 					Log.d(TAG, "Processing YouTube JSON for " + search);
 					processYoutubeJSON(search, type);
 
-					if (videos.size() == 10) {
+					if (videos.size() == 40) {
 						break;
 					}
 				}
@@ -359,7 +359,7 @@ public class PlaylistService extends IntentService {
 					search_url = a.getName();
 					processYoutubeJSON(search_url, type);
 					imgURL = "";
-					if (videos.size() == 15) {
+					if (videos.size() == 40) {
 						Log.d(TAG, "Shortening video span for demo . . .");
 						break;
 					}
@@ -958,7 +958,7 @@ public class PlaylistService extends IntentService {
 					Log.d(TAG, "Processing Youtube JSON for " + search);
 					processYoutubeJSON(search, type);
 					// imgURL = "";
-					if (videos.size() == 10) {
+					if (videos.size() == 40) {
 						Log.d(TAG, "Shortening video span for demo . . .");
 						break;
 					}

@@ -27,6 +27,8 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.annotation.SuppressLint;
 import android.app.Notification;
@@ -63,6 +65,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.koushikdutta.urlimageviewhelper.UrlImageViewHelper;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 
 //import com.iheanyiekechukwu.tubalr.PlaylistActivity.YoutubeVideoTask;
 
@@ -878,6 +883,34 @@ public class MusicService extends Service implements OnPreparedListener,
 
 	@Override
 	public void onCompletion(MediaPlayer mp) {
+		
+		String completedURL = "http://www.tubalr.com/api/analytics/report_watched_video";
+		AsyncHttpClient client = new AsyncHttpClient();
+
+		RequestParams params = new RequestParams();
+		params.put("video_id", getCurrentVideo().getId().toString());
+		params.put("video_title", getCurrentVideo().getTitle());
+		if(UserHelper.userLoggedIn()) {
+			params.put("user_id", UserHelper.userInfo[UserHelper.USER]);
+		}
+		params.put("user_agent", "android");
+		
+		client.post(completedURL, params, new JsonHttpResponseHandler() {
+			
+			@Override
+			public void onSuccess(JSONObject result) {
+				Log.d(TAG, "Result logged to database.");
+				try {
+					result.getBoolean("success");
+					//Toast.makeText(getBaseContext(), "Successfully appended to the database.", Toast.LENGTH_SHORT).show();
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		});
+		
+		
 		release();
 		nextTrack();
 	}
@@ -1343,6 +1376,19 @@ public class MusicService extends Service implements OnPreparedListener,
 			nextTrack();
 		}
 
+	}
+	
+	private class StatsTask extends AsyncTask<String, Integer, String> {
+
+		@Override
+		protected String doInBackground(String... params) {
+			// TODO Auto-generated method stub
+			
+			String URL = params[0];
+			String html = getPage(URL);
+			return html;
+		}
+		
 	}
 
 	private class YoutubeVideoTask extends AsyncTask<String, Integer, String> {
